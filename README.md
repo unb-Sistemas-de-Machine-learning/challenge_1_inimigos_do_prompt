@@ -1,11 +1,11 @@
 # Challenge 1 - Equipe Inimigos do prompt - Sistemas de Machine Learning 2026/02
 
-## 🎯 Challenge Statement
+## Challenge Statement
 "Ajudar assinantes de newsletters de tecnologia (como o Techdrop) a consumir notícias com mais senso crítico em seus e-mails, com um sistema que prevê o grau de sensacionalismo e a probabilidade de desinformação de cada pauta — e saberemos que funcionou se, em um teste com leitores reais, o modelo acertar a classificação melhor que um baseline de regras de palavras-chave e os usuários relatarem que o relatório de veracidade influenciou sua percepção sobre as notícias.”
 
 ---
 
-## 💼 Objetivo de Negócio (Impacto Real)
+## Objetivo de Negócio (Impacto Real)
 - **Público-alvo:** Assinantes de newsletters de tecnologia no Brasil.
 - **Impacto Prático:** Reduzir o pânico especulativo e blindar o leitor de desinformação técnica, permitindo um consumo crítico de notícias.
 - **KPIs de Sucesso:**
@@ -15,14 +15,14 @@
 
 ---
 
-## 🧠 Objetivo de ML (Modelo e Avaliação)
+## Objetivo de ML (Modelo e Avaliação)
 - **Predição:** Nível de sensacionalismo/hype em textos jornalísticos e informativos.
 - **Métrica Principal:** **F-0.5 Score** (Otimizando a Precisão).
 - **Justificativa:** O erro mais prejudicial em moderação de conteúdo é o *Falso Positivo* (rotular indevidamente um autor legítimo como sensacionalista). Focar na Precisão previne que o sistema aja como um "censor injusto", priorizando a confiança e a credibilidade das predições.
 
 ---
 
-## 🚧 Escopo do Projeto
+## Escopo do Projeto
 ### ✅ O que o projeto TRATA (In-Scope)
 * Notícias e artigos extraídos de newsletters de tecnologia em Português (Brasil).
 * Processamento exclusivo de texto limpo (removendo HTML, menus e propagandas).
@@ -36,7 +36,7 @@
 
 ---
 
-## 📋 Planejamento e As 6 Guiding Questions Refatoradas
+## Planejamento e As 6 Guiding Questions Refatoradas
 
 **1. Dados: Aquisição e Representatividade**
 - **A Pergunta:** De onde extrairemos um volume histórico de newsletters de tecnologia que reflita os jargões e o hype atual, garantindo que o modelo não aprenda com dados defasados?
