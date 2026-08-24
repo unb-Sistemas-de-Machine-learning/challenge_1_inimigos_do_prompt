@@ -1,0 +1,19 @@
+# Ambientes Virtuais
+.venv/
+venv/
+env/
+ENV/
+
+# Cache do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# MkDocs
+site/
+
+# Datasets e Arquivos Locais de Dados
+data/
+*.csv
+*.zip
