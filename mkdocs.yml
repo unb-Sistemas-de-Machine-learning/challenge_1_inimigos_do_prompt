@@ -1,0 +1,58 @@
+site_name: Inimigos do Prompt
+site_description: Documentação do Challenge 1 da Equipe Inimigos do Prompt - Sistemas de Machine Learning 2026/02
+site_author: Equipe Inimigos do Prompt
+
+theme:
+  name: material
+  language: pt
+  palette:
+    # Paleta de cores para o modo claro
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: deep purple
+      toggle:
+        icon: material/brightness-7
+        name: Mudar para modo escuro
+    # Paleta de cores para o modo escuro
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: deep purple
+      toggle:
+        icon: material/brightness-4
+        name: Mudar para modo claro
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Início: index.md
+  - Planejamento: planejamento.md
+  - Coleta de Dados: dados.md
+  - Guia de Configuração: setup.md
