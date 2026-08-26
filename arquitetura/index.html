@@ -13,10 +13,10 @@
       
       
       
-        <link rel="prev" href="..">
+        <link rel="prev" href="../dados/">
       
       
-        <link rel="next" href="../dados/">
+        <link rel="next" href="../setup/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Planejamento - Inimigos do Prompt</title>
+        <title>Arquitetura da Extensão - Inimigos do Prompt</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#planejamento-do-projeto" class="md-skip">
+        <a href="#arquitetura-da-extensao-web" class="md-skip">
           Ir para o conteúdo
         </a>
       
@@ -112,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Planejamento
+              Arquitetura da Extensão
             
           </span>
         </div>
@@ -230,11 +230,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../planejamento/" class="md-tabs__link">
         
   
   
@@ -270,9 +268,11 @@
   
   
   
+    
   
-    <li class="md-tabs__item">
-      <a href="../arquitetura/" class="md-tabs__link">
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
         
   
   
@@ -368,37 +368,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Planejamento
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../planejamento/" class="md-nav__link">
         
   
   
@@ -414,48 +387,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Índice">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Índice
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#as-6-guiding-questions-refatoradas" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        As 6 Guiding Questions Refatoradas
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#matriz-de-responsabilidades-e-cronograma" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Matriz de Responsabilidades e Cronograma
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -491,10 +422,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../arquitetura/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arquitetura da Extensão
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -510,6 +468,109 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Índice">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#visao-geral-e-fluxo-de-uso" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visão Geral e Fluxo de Uso
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stack-tecnologica" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stack Tecnológica
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#componentes-da-extensao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Componentes da Extensão
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Componentes da Extensão">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-content-script" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Content Script
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-background-service-worker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Background Service Worker
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-side-panel-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Side Panel UI
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#estrutura-de-diretorios-recomendada" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Estrutura de Diretórios Recomendada
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -568,10 +629,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#as-6-guiding-questions-refatoradas" class="md-nav__link">
+  <a href="#visao-geral-e-fluxo-de-uso" class="md-nav__link">
     <span class="md-ellipsis">
       
-        As 6 Guiding Questions Refatoradas
+        Visão Geral e Fluxo de Uso
       
     </span>
   </a>
@@ -579,10 +640,71 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#matriz-de-responsabilidades-e-cronograma" class="md-nav__link">
+  <a href="#stack-tecnologica" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Matriz de Responsabilidades e Cronograma
+        Stack Tecnológica
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#componentes-da-extensao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Componentes da Extensão
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Componentes da Extensão">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-content-script" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Content Script
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-background-service-worker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Background Service Worker
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-side-panel-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Side Panel UI
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#estrutura-de-diretorios-recomendada" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Estrutura de Diretórios Recomendada
       
     </span>
   </a>
@@ -606,114 +728,117 @@
 
 
 
-<h1 id="planejamento-do-projeto">Planejamento do Projeto<a class="headerlink" href="#planejamento-do-projeto" title="Permanent link">&para;</a></h1>
-<p>Abaixo estão detalhadas as diretrizes estratégicas e operacionais do projeto, organizadas através das <strong>6 Guiding Questions</strong> de Sistemas de Machine Learning.</p>
+<h1 id="arquitetura-da-extensao-web">Arquitetura da Extensão Web<a class="headerlink" href="#arquitetura-da-extensao-web" title="Permanent link">&para;</a></h1>
+<p>Este documento detalha o fluxo de interação, a stack tecnológica e a organização técnica da extensão de navegador do projeto <strong>Inimigos do Prompt</strong>.</p>
 <hr />
-<h2 id="as-6-guiding-questions-refatoradas">As 6 Guiding Questions Refatoradas<a class="headerlink" href="#as-6-guiding-questions-refatoradas" title="Permanent link">&para;</a></h2>
-<details class="note" open="open">
-<summary>1. Dados: Aquisição e Representatividade</summary>
-<ul>
-<li><strong>A Pergunta:</strong> De onde extrairemos um volume histórico de newsletters de tecnologia que reflita os jargões e o hype atual, garantindo que o modelo não aprenda com dados defasados?</li>
-<li><strong>Atividade:</strong> Mapear 10 portais de tecnologia/newsletters relevantes e criar um script de web scraping (ou exportação de e-mails) para montar o dataset cru inicial.</li>
-<li><strong>Recurso:</strong> Terminal Linux, Node.js (com Cheerio ou Puppeteer) ou Python (BeautifulSoup).</li>
-<li><strong>Responsável:</strong> Membro 1</li>
-<li><strong>Prazo:</strong> 28/08/2026</li>
-</ul>
-</details>
-<details class="note" open="open">
-<summary>2. Dados: Processamento e Ruído</summary>
-<ul>
-<li><strong>A Pergunta:</strong> Como o pipeline vai limpar as tags HTML, links de patrocinadores e cabeçalhos dos e-mails, isolando apenas o texto das notícias para o classificador?</li>
-<li><strong>Atividade:</strong> Desenvolver uma função de sanitização usando expressões regulares (Regex) para receber o HTML do e-mail e obter apenas texto limpo.</li>
-<li><strong>Recurso:</strong> VSCode/Cursor AI, bibliotecas de conversão HTML-para-texto e um dataset de teste de 5 e-mails.</li>
-<li><strong>Responsável:</strong> Membro 2</li>
-<li><strong>Prazo:</strong> 28/08/2026</li>
-</ul>
-</details>
-<details class="note" open="open">
-<summary>3. Usuário: Integração, Atrito e Interpretabilidade</summary>
-<ul>
-<li><strong>A Pergunta:</strong> Como entregar o relatório de sensacionalismo com baixo atrito e explicar o "porquê" da classificação sem interromper agressivamente a leitura do usuário?</li>
-<li><strong>Atividade:</strong> Desenhar o fluxo do usuário (ex: o bot envia um resumo no topo da mensagem original) e definir como a explicação (interpretabilidade) será exibida.</li>
-<li><strong>Recurso:</strong> Excalidraw ou Figma para desenhar o fluxo e questionário de validação com colegas.</li>
-<li><strong>Responsável:</strong> Membro 3</li>
-<li><strong>Prazo:</strong> 04/09/2026</li>
-</ul>
-</details>
-<details class="note" open="open">
-<summary>4. Modelo: Baseline, Tradeoffs e Valor Justificado</summary>
-<ul>
-<li><strong>A Pergunta:</strong> Qual regra de palavras-chave (baseline) usaremos como ponto de partida e qual métrica (ex: F1-Score ou Precisão) provará que o esforço computacional do ML realmente compensa?</li>
-<li><strong>Atividade:</strong> Codificar um baseline simples (ex: <code>if</code> com contador de palavras como "revolucionário" ou "urgente") e definir o limiar de acurácia que o modelo de ML precisa bater para ser aceito.</li>
-<li><strong>Recurso:</strong> Ambiente de desenvolvimento (Python/Jupyter) e o dataset limpo da etapa 2.</li>
-<li><strong>Responsável:</strong> Membro 4</li>
-<li><strong>Prazo:</strong> 04/09/2026</li>
-</ul>
-</details>
-<details class="note" open="open">
-<summary>5. Produção: Arquitetura de Ingestão e Custo</summary>
-<ul>
-<li><strong>A Pergunta:</strong> Como estruturar o recebimento simultâneo dessas newsletters mantendo o custo de infraestrutura baixo e evitando o gargalo de processamento?</li>
-<li><strong>Atividade:</strong> Criar a Prova de Conceito (PoC) de um servidor conectado a uma conta de e-mail via IMAP, isolado em um contêiner, que recebe as mensagens e as enfileira para processamento.</li>
-<li><strong>Recurso:</strong> Docker, Node.js ou C#/.NET, e uma conta de e-mail de teste dedicada.</li>
-<li><strong>Responsável:</strong> Membro 5</li>
-<li><strong>Prazo:</strong> 11/09/2026</li>
-</ul>
-</details>
-<details class="note" open="open">
-<summary>6. Ética: Transparência e Danos</summary>
-<ul>
-<li><strong>A Pergunta:</strong> Se o modelo cometer um falso positivo e classificar a notícia legítima de um criador de conteúdo como "Fake/Sensacionalista", qual é o mecanismo de mitigação de danos à reputação?</li>
-<li><strong>Atividade:</strong> Redigir o termo de isenção de responsabilidade (disclaimer) que acompanhará as análises e criar um canal de feedback para usuários reportarem erros do modelo.</li>
-<li><strong>Recurso:</strong> Documento de texto colaborativo.</li>
-<li><strong>Responsável:</strong> Membros 1 e 2 (em par)</li>
-<li><strong>Prazo:</strong> 11/09/2026</li>
-</ul>
-</details>
+<h2 id="visao-geral-e-fluxo-de-uso">Visão Geral e Fluxo de Uso<a class="headerlink" href="#visao-geral-e-fluxo-de-uso" title="Permanent link">&para;</a></h2>
+<p>A extensão atua integrada ao webmail do usuário (ex.: Gmail, Outlook), analisando newsletters de tecnologia diretamente na aba de leitura para mitigar o consumo de desinformação e sensacionalismo técnico.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    autonumber
+    actor User as Usuário (Webmail)
+    participant CS as Content Script (DOM)
+    participant BG as Background Worker
+    participant API as API de Inferência (FastAPI)
+    participant SP as Side Panel (React UI)
+
+    User-&gt;&gt;CS: Abre e-mail da newsletter (ex: Techdrop)
+    CS-&gt;&gt;CS: Identifica remetente e extrai corpo limpo da mensagem
+    CS-&gt;&gt;BG: Envia payload de texto extraído
+    BG-&gt;&gt;API: POST /api/v1/analyze (Texto limpo)
+    API--&gt;&gt;BG: Retorna scores, segmentos e pesos de explicabilidade (SHAP/LIME)
+    BG-&gt;&gt;CS: Repassa termos para destaque visual
+    CS-&gt;&gt;User: Aplica grifos interativos no corpo do e-mail
+    BG-&gt;&gt;SP: Atualiza métricas e relatório detalhado de pautas
+    User-&gt;&gt;SP: Consulta score geral de sensacionalismo e explicações</code></pre>
 <hr />
-<h2 id="matriz-de-responsabilidades-e-cronograma">Matriz de Responsabilidades e Cronograma<a class="headerlink" href="#matriz-de-responsabilidades-e-cronograma" title="Permanent link">&para;</a></h2>
+<h2 id="stack-tecnologica">Stack Tecnológica<a class="headerlink" href="#stack-tecnologica" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Membro</th>
-<th style="text-align: left;">Função/Área</th>
-<th style="text-align: left;">Atividades Principais</th>
-<th style="text-align: left;">Prazo Final</th>
+<th style="text-align: left;">Camada</th>
+<th style="text-align: left;">Tecnologia</th>
+<th style="text-align: left;">Justificativa Técnica</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>Membro 1</strong></td>
-<td style="text-align: left;">Aquisição de Dados &amp; Ética</td>
-<td style="text-align: left;">Web scraping de portais, mapeamento de fontes de dados, elaboração do termo de transparência.</td>
-<td style="text-align: left;">11/09/2026</td>
+<td style="text-align: left;"><strong>Padrão</strong></td>
+<td style="text-align: left;">Manifest V3</td>
+<td style="text-align: left;">Padrão mandatório dos navegadores modernos (Chromium / Firefox), garantindo segurança e conformidade de publicação.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Membro 2</strong></td>
-<td style="text-align: left;">Processamento &amp; Ética</td>
-<td style="text-align: left;">Pipeline de limpeza de dados (Regex), remoção de ruído (HTML), termo de transparência.</td>
-<td style="text-align: left;">11/09/2026</td>
+<td style="text-align: left;"><strong>Linguagem</strong></td>
+<td style="text-align: left;">TypeScript</td>
+<td style="text-align: left;">Tipagem estrita para manipulação segura de seletores do DOM, mensagens internas (<code>chrome.runtime</code>) e contratos de payload da API.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Membro 3</strong></td>
-<td style="text-align: left;">UX / Integração</td>
-<td style="text-align: left;">Design da interface e fluxo do usuário, integração e interpretabilidade visual.</td>
-<td style="text-align: left;">04/09/2026</td>
+<td style="text-align: left;"><strong>Build &amp; Tooling</strong></td>
+<td style="text-align: left;">Vite + <code>@crxjs/vite-plugin</code></td>
+<td style="text-align: left;">Proporciona suporte a <em>Hot Module Replacement</em> (HMR) em ambiente de extensão, acelerando o ciclo de desenvolvimento da UI.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Membro 4</strong></td>
-<td style="text-align: left;">Modelagem / ML</td>
-<td style="text-align: left;">Implementação de baselines e avaliação de modelos baseado no F-0.5 Score.</td>
-<td style="text-align: left;">04/09/2026</td>
+<td style="text-align: left;"><strong>UI Framework</strong></td>
+<td style="text-align: left;">React 18+</td>
+<td style="text-align: left;">Renderização reativa do painel lateral e injeções pontuais no DOM via Shadow Root.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><strong>Membro 5</strong></td>
-<td style="text-align: left;">Engenharia / DevOps</td>
-<td style="text-align: left;">Servidor de ingestão IMAP, conteinerização com Docker e PoC em produção.</td>
-<td style="text-align: left;">11/09/2026</td>
+<td style="text-align: left;"><strong>Estilização</strong></td>
+<td style="text-align: left;">Tailwind CSS + Shadow DOM</td>
+<td style="text-align: left;">Isolamento estrito de escopo de estilos para evitar que as classes da extensão interfiram no CSS do webmail e vice-versa.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Componentes</strong></td>
+<td style="text-align: left;">Radix UI / shadcn/ui + Lucide Icons</td>
+<td style="text-align: left;">Componentes acessíveis, leves e modulares para badges, tooltips de explicabilidade e cartões de pauta.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Estado Local</strong></td>
+<td style="text-align: left;">Zustand</td>
+<td style="text-align: left;">Gerenciamento de estado leve para sincronizar dados de inferência entre o Content Script e o Side Panel.</td>
 </tr>
 </tbody>
 </table>
+<hr />
+<h2 id="componentes-da-extensao">Componentes da Extensão<a class="headerlink" href="#componentes-da-extensao" title="Permanent link">&para;</a></h2>
+<h3 id="1-content-script">1. Content Script<a class="headerlink" href="#1-content-script" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Detecção Contextual:</strong> Identifica remetentes cadastrados ou estruturas típicas de newsletters no DOM da página aberta.</li>
+<li><strong>Sanitização e Extração:</strong> Isola o nó principal do corpo do e-mail, removendo pixels de rastreamento, links de descadastramento e anúncios periféricos via <code>DOMPurify</code> e seletores CSS dedicados.</li>
+<li><strong>Destaque no Texto (In-line Highlights):</strong> Injeta marcações interativas (<code>&lt;mark&gt;</code>) nos trechos pontuados pela explicabilidade do modelo, exibindo tooltips ao passar o cursor sobre termos hiperbólicos.</li>
+</ul>
+<h3 id="2-background-service-worker">2. Background Service Worker<a class="headerlink" href="#2-background-service-worker" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Atua como intermediário assíncrono entre os scripts injetados no DOM e os serviços externos.</li>
+<li>Dispara requisições HTTP seguras para a API de inferência do backend.</li>
+<li>Gerencia o armazenamento em cache local (<code>chrome.storage.local</code>) de newsletters já processadas para evitar requisições redundantes.</li>
+</ul>
+<h3 id="3-side-panel-ui">3. Side Panel UI<a class="headerlink" href="#3-side-panel-ui" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Interface nativa ancorada via <strong>Chrome Side Panel API</strong> (<code>chrome.sidePanel</code>), permitindo leitura simultânea do e-mail e do relatório analítico.</li>
+<li>Exibe o <strong>Score Geral de Sensacionalismo/Hype</strong> da edição e a segmentação de cada pauta tratada no e-mail.</li>
+</ul>
+<hr />
+<h2 id="estrutura-de-diretorios-recomendada">Estrutura de Diretórios Recomendada<a class="headerlink" href="#estrutura-de-diretorios-recomendada" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>extension/
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>├── manifest.json
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>├── package.json
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>├── vite.config.ts
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>├── src/
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│   ├── background/
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│   │   └── service-worker.ts       # Gestão de eventos, API e cache local
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>│   ├── content/
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│   │   ├── extractor.ts            # Limpeza e extração de texto do e-mail
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>│   │   ├── highlighter.ts          # Injeção de grifos e tooltips no DOM
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│   │   └── index.ts                # Ponto de entrada do Content Script
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>│   ├── sidepanel/
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>│   │   ├── components/             # Componentes React (Cards, Badges, Metrics)
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>│   │   ├── App.tsx                 # View principal do Side Panel
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>│   │   └── index.tsx               # Montagem do React no painel lateral
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>│   ├── services/
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>│   │   └── api.ts                  # Cliente de comunicação com o backend
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>│   └── styles/
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>│       └── globals.css             # Configurações do Tailwind CSS
+</span></code></pre></div>
 
 
 
