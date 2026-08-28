@@ -4,7 +4,7 @@ Esta seção detalha o fluxo de coleta, processamento de ruído e consolidação
 
 ---
 
-## 📂 Visão Geral dos Datasets Gerados
+## Visão Geral dos Datasets Gerados
 
 Os dados coletados são armazenados na pasta `data/` nos seguintes arquivos:
 
@@ -16,7 +16,7 @@ Os dados coletados são armazenados na pasta `data/` nos seguintes arquivos:
 
 ---
 
-## 🛠️ Detalhes dos Scripts de Ingestão (`src/`)
+## Detalhes dos Scripts de Ingestão (`src/`)
 
 ### 1. Consolidificador do Fake.br-Corpus (`downloader_fake_datasets.py`)
 
@@ -67,7 +67,7 @@ Utilizado para construir o conjunto de dados sob o domínio de tecnologia em por
 
 ---
 
-## 🛡️ Boas Práticas e Política de Polidez (Politeness Policy)
+## Boas Práticas e Política de Polidez (Politeness Policy)
 
 Para garantir o bom comportamento dos scrapers e evitar sobrecarga nos servidores das fontes:
 1. **User Agent Real:** Todos os scrapers enviam um cabeçalho `User-Agent` simulando um navegador moderno (Chrome no macOS) para passar em firewalls básicos.
