@@ -4,7 +4,7 @@ Este guia orienta na configuração do ambiente de desenvolvimento, instalação
 
 ---
 
-## 💻 1. Configurando o Ambiente Virtual Python
+## 1. Configurando o Ambiente Virtual Python
 
 Recomendamos utilizar um ambiente virtual (`venv`) para gerenciar as dependências do projeto de forma isolada.
 
@@ -39,7 +39,7 @@ No seu terminal, execute os seguintes comandos:
 
 ---
 
-## 📦 2. Instalando as Dependências
+## 2. Instalando as Dependências
 
 Com o ambiente virtual ativado, instale os pacotes necessários descritos em `requirements.txt`:
 
@@ -52,7 +52,7 @@ pip install -r requirements.txt
 
 ---
 
-## 🚀 3. Executando os Scripts de Coleta de Dados
+## 3. Executando os Scripts de Coleta de Dados
 
 Com todas as dependências instaladas, você pode rodar os scripts de ingestão a partir da pasta raiz do projeto.
 
@@ -87,7 +87,7 @@ python src/scraper_tech_news.py --pages 5 --delay 1.5
 
 ---
 
-## 📖 4. Visualizando a Documentação Localmente
+## 4. Visualizando a Documentação Localmente
 
 O MkDocs permite visualizar as alterações nas páginas Markdown em tempo real usando um servidor web local.
 
