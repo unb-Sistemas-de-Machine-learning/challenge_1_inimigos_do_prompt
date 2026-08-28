@@ -4,7 +4,7 @@ Abaixo estão detalhadas as diretrizes estratégicas e operacionais do projeto, 
 
 ---
 
-## 📅 As 6 Guiding Questions Refatoradas
+## As 6 Guiding Questions Refatoradas
 
 ???+ note "1. Dados: Aquisição e Representatividade"
     * **A Pergunta:** De onde extrairemos um volume histórico de newsletters de tecnologia que reflita os jargões e o hype atual, garantindo que o modelo não aprenda com dados defasados?
@@ -50,7 +50,7 @@ Abaixo estão detalhadas as diretrizes estratégicas e operacionais do projeto, 
 
 ---
 
-## 👥 Matriz de Responsabilidades e Cronograma
+## Matriz de Responsabilidades e Cronograma
 
 | Membro | Função/Área | Atividades Principais | Prazo Final |
 | :--- | :--- | :--- | :--- |
