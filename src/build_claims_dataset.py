@@ -10,7 +10,13 @@ Colunas: claim, label, target, agency, source
 """
 
 import os
+import sys
+from typing import Optional
 import pandas as pd
+
+# Garantir codificação UTF-8 para stdout no Windows
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
 
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
 OUTPUT_CSV = os.path.join(DATA_DIR, "dataset_claims.csv")
@@ -26,26 +32,33 @@ RELEVANT_CATEGORIES = [
 LABEL_MAP_POSITIVE = [  # desinformação → target=1
     "falso", "fake", "enganoso", "distorcido", "impreciso",
     "insustentável", "sem evidências", "descontextualizado",
-    "contraditório", "exagerado",
+    "contraditório", "exagerado", "1", "2"
 ]
 LABEL_MAP_NEGATIVE = [  # legítimo → target=0
     "verdadeiro", "correto", "real", "confirmado", "verificado",
-    "verdade", "comprovado",
+    "verdade", "comprovado", "0"
 ]
 
 MIN_CLAIM_WORDS = 8  # Descartar alegações muito curtas
 
 
-def normalize_label(label_str: str) -> int | None:
+def normalize_label(label_val) -> Optional[int]:
     """Converte label original para 0 ou 1. Retorna None se inconclusivo."""
-    if not isinstance(label_str, str):
+    if isinstance(label_val, (int, float)):
+        val = int(label_val)
+        if val == 2 or val == 1:
+            return 1
+        elif val == 0:
+            return 0
         return None
-    label_lower = label_str.lower().strip()
+    if not isinstance(label_val, str):
+        return None
+    label_lower = label_val.lower().strip()
     for pos in LABEL_MAP_POSITIVE:
-        if pos in label_lower:
+        if pos == label_lower or pos in label_lower:
             return 1
     for neg in LABEL_MAP_NEGATIVE:
-        if neg in label_lower:
+        if neg == label_lower or neg in label_lower:
             return 0
     return None  # Label ambíguo → descartar
 
@@ -55,7 +68,7 @@ def is_relevant_category(category: str) -> bool:
     if not isinstance(category, str):
         return False
     cat_lower = category.lower()
-    return any(rel in cat_lower for rel in RELEVANT_CATEGORIES)
+    return True # Deixando livre para ter volume no baseline
 
 
 def load_factchecks_br() -> pd.DataFrame:
@@ -67,7 +80,7 @@ def load_factchecks_br() -> pd.DataFrame:
         from datasets import load_dataset
         print("Carregando FactChecks.br do Hugging Face...")
         ds = load_dataset("fake-news-UFG/FactChecksbr", trust_remote_code=True)
-        # O dataset pode ter splits diferentes; tentamos concatenar todos
+        # O dataset possui split 'train'
         splits = list(ds.keys())
         print(f"Splits encontrados: {splits}")
         dfs = [ds[split].to_pandas() for split in splits]
@@ -93,30 +106,16 @@ def main():
         print("Dataset vazio. Abortando.")
         return
 
-    # 2. Inspeciona colunas para identificar campos de claim, label e categoria
-    print(f"\nAmostra das primeiras linhas:\n{df_raw.head(3).to_string()}\n")
-
-    # Tenta identificar automaticamente as colunas mais comuns do FactChecks.br
-    # (claim, verdict/label, category/topic, source/agency)
-    col_claim = next((c for c in df_raw.columns if "claim" in c.lower() or "text" in c.lower() or "alegacao" in c.lower()), None)
-    col_label = next((c for c in df_raw.columns if "label" in c.lower() or "verdict" in c.lower() or "classificacao" in c.lower()), None)
-    col_cat   = next((c for c in df_raw.columns if "categ" in c.lower() or "topic" in c.lower() or "assunto" in c.lower()), None)
-    col_agency = next((c for c in df_raw.columns if "source" in c.lower() or "agency" in c.lower() or "agencia" in c.lower()), None)
-
-    print(f"Coluna de claim detectada: {col_claim}")
-    print(f"Coluna de label detectada: {col_label}")
-    print(f"Coluna de categoria detectada: {col_cat}")
-    print(f"Coluna de agência detectada: {col_agency}")
-
-    if not col_claim or not col_label:
-        print("\nNao foi possível detectar colunas de claim/label automaticamente.")
-        print("Ajuste manualmente as variáveis col_claim e col_label neste script.")
-        return
+    # Mapeamento explícito das colunas detectadas no FactChecks.br
+    col_claim = "claim_text"
+    col_label = "is_fake"
+    col_cat   = "category"
+    col_agency = "claim_author"
 
     # 3. Filtra por categoria (se disponível) e normaliza labels
     df = df_raw.copy()
 
-    if col_cat:
+    if col_cat in df.columns:
         mask_cat = df[col_cat].apply(is_relevant_category)
         df = df[mask_cat].copy()
         print(f"\nApos filtro de categoria: {len(df)} registros")
@@ -137,7 +136,7 @@ def main():
         "claim": df["claim"].values,
         "target": df["target"].values,
         "label": df["target"].map({0: "legitimo", 1: "desinformacao"}),
-        "agency": df[col_agency].values if col_agency else "desconhecida",
+        "agency": df[col_agency].values if col_agency in df.columns else "desconhecida",
         "source": "factchecks_br",
     })
 

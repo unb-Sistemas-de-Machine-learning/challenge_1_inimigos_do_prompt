@@ -101,5 +101,5 @@ def train_and_evaluate_baseline(csv_path):
     return res_df
 
 if __name__ == "__main__":
-    csv_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "dataset_hype_treino.csv"))
+    csv_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "dataset_final_treino.csv"))
     train_and_evaluate_baseline(csv_file)
