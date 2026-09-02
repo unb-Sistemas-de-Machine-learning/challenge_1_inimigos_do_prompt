@@ -86,3 +86,10 @@ Em testes com leitores reais, o indicador alterar significativamente a confianç
 - **Recurso:** Documento de texto colaborativo.
 - **Responsável:** Membros 1 e 2 (em par).
 - **Prazo:** 11/09/2026.
+
+## Infraestrutura de Banco de Dados (Cache)
+
+Para levantar o PostgreSQL localmente com as tabelas de cache já configuradas, abra o terminal na raiz do projeto e execute:
+
+```bash
+docker compose up -d
