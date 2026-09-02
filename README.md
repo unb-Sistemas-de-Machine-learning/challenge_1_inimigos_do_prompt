@@ -86,3 +86,24 @@ Em testes com leitores reais, o indicador alterar significativamente a confianç
 - **Recurso:** Documento de texto colaborativo.
 - **Responsável:** Membros 1 e 2 (em par).
 - **Prazo:** 11/09/2026.
+
+---
+
+## 🎨 Interface e Funcionalidades (Extensão Web)
+
+A extensão web (Manifest V3) foi construída com **React e Tailwind CSS**, apresentando uma interface rica e interativa para o usuário final:
+
+- **Painel Lateral (Side Panel):** Análise em tempo real do e-mail aberto com métricas de sensacionalismo, **Feature Importance** (mini-barras horizontais indicando o peso de cada termo detectado pelo modelo) e uma coleta de confiança interativa.
+- **Painel de Controle (Dashboard):** Uma aba em tela cheia (SPA) gerada dinamicamente contendo o relatório consolidado de todas as alegações, níveis de severidade, justificativas técnicas da IA e opções de exportação/reporte.
+
+### Telas da Aplicação
+
+#### Painel Lateral (Side Panel) - Análise de Hype
+![Extensão Side Panel 1](images/print_extensao_1.png)
+
+#### Painel Lateral (Side Panel) - Claims e Ações
+![Extensão Side Panel 2](images/print_extensao_2.png)
+
+#### Painel de Controle Completo (Dashboard)
+![Dashboard Tela Cheia](images/print_dashboard_1.png)
+
