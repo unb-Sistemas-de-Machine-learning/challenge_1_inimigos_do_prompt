@@ -1,28 +1,33 @@
 # Challenge 1 - Equipe Inimigos do prompt - Sistemas de Machine Learning 2026/02
 
-## Challenge Statement
-"Ajudar assinantes de newsletters de tecnologia (como o Techdrop) a consumir notícias com mais senso crítico em seus e-mails, com um sistema que prevê o grau de sensacionalismo e a probabilidade de desinformação de cada pauta — e saberemos que funcionou se, em um teste com leitores reais, o modelo acertar a classificação melhor que um baseline de regras de palavras-chave e os usuários relatarem que o relatório de veracidade influenciou sua percepção sobre as notícias.”
+## 🎯 Challenge Statement (Proposta)
+"Ajudar leitores de newsletters de tecnologia a consumir conteúdos com mais senso crítico direto no e-mail, por meio de um pipeline de Machine Learning que quantifica o nível de sensacionalismo do texto e sinaliza alegações com potencial de desinformação/hype.
+Saberemos que funcionou se:
+O modelo superar um baseline de heurísticas baseadas em palavras-chave em métricas de classificação ($F_1\text{-score}$ e calibração de probabilidade) em um dataset anotado do nicho;
+Em testes com leitores reais, o indicador alterar significativamente a confiança declarada dos usuários em notícias duvidosas/hiperbólicas e apresentar taxa de utilidade percebida superior a 70%."
 
 ---
 
-## Objetivo de Negócio (Impacto Real)
+## 💼 Objetivo de Negócio (Impacto Real)
 - **Público-alvo:** Assinantes de newsletters de tecnologia no Brasil.
 - **Impacto Prático:** Reduzir o pânico especulativo e blindar o leitor de desinformação técnica, permitindo um consumo crítico de notícias.
 - **KPIs de Sucesso:**
-  - **Influência na Percepção (> 70%):** Leitores que relatam mudança de visão após usar a ferramenta.
-  - **Engajamento com Explicabilidade (> 40%):** Interação com destaques e alertas.
-  - **CSAT (Credibilidade):** Nota >= 4.0/5.0 em testes de uso contínuo.
+  - **Mudança Comportamental de Confiança:** Medir a confiabilidade declarada do leitor antes de ver o score do modelo vs. depois (comportamento objetivo pré/pós-intervenção).
+  - **Taxa de Utilidade Percebida (> 70%):** Percentual de usuários que avaliam o relatório final como útil.
+  - **Engajamento com Explicabilidade (> 40%):** Cliques em "ver checagem detalhada" ou interação com os destaques e alertas.
 
 ---
 
-## Objetivo de ML (Modelo e Avaliação)
-- **Predição:** Nível de sensacionalismo/hype em textos jornalísticos e informativos.
-- **Métrica Principal:** **F-0.5 Score** (Otimizando a Precisão).
-- **Justificativa:** O erro mais prejudicial em moderação de conteúdo é o *Falso Positivo* (rotular indevidamente um autor legítimo como sensacionalista). Focar na Precisão previne que o sistema aja como um "censor injusto", priorizando a confiança e a credibilidade das predições.
+## 🧠 Objetivo de ML (Modelo e Avaliação)
+- **Predição (Multi-Target):**
+  - **Target 1:** Score contínuo de sensacionalismo/clickbait (treinado em escala Likert de 1 a 5).
+  - **Target 2:** Probabilidade de desinformação/claim verification (treinado em categorias de claims).
+- **Métrica Principal:** **F1-Score** e **Calibração de Probabilidade**.
+- **Justificativa:** Tratar sensacionalismo e desinformação como tarefas separadas evita confundir notícias verdadeiras e hiperbólicas com mentiras redigidas em tom neutro. O F1-score balanceia a detecção, enquanto a calibração garante que o score de probabilidade exibido ao usuário reflita a confiança real do modelo.
 
 ---
 
-## Escopo do Projeto
+## 🚧 Escopo do Projeto
 ### ✅ O que o projeto TRATA (In-Scope)
 * Notícias e artigos extraídos de newsletters de tecnologia em Português (Brasil).
 * Processamento exclusivo de texto limpo (removendo HTML, menus e propagandas).
@@ -36,12 +41,14 @@
 
 ---
 
-## Planejamento e As 6 Guiding Questions Refatoradas
+## 📋 Planejamento e As 6 Guiding Questions Refatoradas
 
-**1. Dados: Aquisição e Representatividade**
-- **A Pergunta:** De onde extrairemos um volume histórico de newsletters de tecnologia que reflita os jargões e o hype atual, garantindo que o modelo não aprenda com dados defasados?
-- **Atividade:** Mapear 10 portais de tecnologia/newsletters relevantes e criar um script de web scraping (ou exportação de e-mails) para montar o dataset cru inicial.
-- **Recurso:** Terminal Linux, Node.js (com Cheerio ou Puppeteer) ou Python (BeautifulSoup).
+**1. Dados: Aquisição, Representatividade e Rotulação (Ground Truth)**
+- **A Pergunta:** De onde extrairemos um volume histórico de newsletters que reflita o hype atual, e como garantir uma anotação confiável sabendo que "fake news tech" geralmente são promessas não comprovadas?
+- **Atividade:** 
+  1) Mapear 10 portais/newsletters e criar script de web scraping.
+  2) Criar um **Manual Simples de Anotação**, utilizando escala Likert (1 a 5) para sensacionalismo e tags categóricas para desinformação.
+- **Recurso:** Terminal Linux, Node.js (Cheerio/Puppeteer) ou Python (BeautifulSoup). Manual de anotação e ferramenta de rotulação.
 - **Responsável:** Membro 1.
 - **Prazo:** 28/08/2026.
 
@@ -60,7 +67,7 @@
 - **Prazo:** 04/09/2026.
 
 **4. Modelo: Baseline, Tradeoffs e Valor Justificado**
-- **A Pergunta:** Qual regra de palavras-chave (baseline) usaremos como ponto de partida e qual métrica (ex: F1-Score ou Precisão) provará que o esforço computacional do ML realmente compensa?
+- **A Pergunta:** Qual regra de palavras-chave (baseline) usaremos como ponto de partida e qual métrica (ex: F1-Score e Calibração) provará que o esforço computacional do ML realmente compensa?
 - **Atividade:** Codificar um baseline simples (ex: `if` com contador de palavras como "revolucionário" ou "urgente") e definir o limiar de acurácia que o modelo de ML precisa bater para ser aceito.
 - **Recurso:** Ambiente de desenvolvimento (Python/Jupyter) e o dataset limpo da etapa 2.
 - **Responsável:** Membro 4.
@@ -79,3 +86,10 @@
 - **Recurso:** Documento de texto colaborativo.
 - **Responsável:** Membros 1 e 2 (em par).
 - **Prazo:** 11/09/2026.
+
+## Infraestrutura de Banco de Dados (Cache)
+
+Para levantar o PostgreSQL localmente com as tabelas de cache já configuradas, abra o terminal na raiz do projeto e execute:
+
+```bash
+docker compose up -d

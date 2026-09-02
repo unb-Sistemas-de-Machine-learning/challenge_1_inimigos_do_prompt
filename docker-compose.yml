@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: inimigos_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: user_inimigos
+      POSTGRES_PASSWORD: senha_segura_456
+      POSTGRES_DB: inimigos_do_prompt_cache
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+volumes:
+  pgdata:

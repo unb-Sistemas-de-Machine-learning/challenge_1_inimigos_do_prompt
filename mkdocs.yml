@@ -9,16 +9,16 @@ theme:
     # Paleta de cores para o modo claro
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: deep purple
-      accent: deep purple
+      primary: indigo
+      accent: teal
       toggle:
         icon: material/brightness-7
         name: Mudar para modo escuro
     # Paleta de cores para o modo escuro
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: deep purple
-      accent: deep purple
+      primary: indigo
+      accent: teal
       toggle:
         icon: material/brightness-4
         name: Mudar para modo claro
@@ -55,4 +55,5 @@ nav:
   - Início: index.md
   - Planejamento: planejamento.md
   - Coleta de Dados: dados.md
+  - Arquitetura da Extensão: arquitetura.md
   - Guia de Configuração: setup.md
