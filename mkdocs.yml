@@ -56,4 +56,6 @@ nav:
   - Planejamento: planejamento.md
   - Coleta de Dados: dados.md
   - Arquitetura da Extensão: arquitetura.md
+  - Execução PoC & API: execucao_poc_api.md
+  - Extensão Web (Frontend): extensao_frontend.md
   - Guia de Configuração: setup.md
