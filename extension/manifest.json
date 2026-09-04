@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Inimigos do Prompt",
+  "version": "1.0.0",
+  "description": "Detector de sensacionalismo e hype em newsletters.",
+  "action": {
+    "default_title": "Abrir Painel",
+    "default_popup": "index.html"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "sidePanel"
+  ],
+  "host_permissions": [
+    "http://localhost:8000/*"
+  ]
+}
