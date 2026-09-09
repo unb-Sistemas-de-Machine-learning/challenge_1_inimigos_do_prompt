@@ -17,3 +17,8 @@ site/
 data/
 *.csv
 *.zip
+
+# Sistema Operacional & IDEs
+.DS_Store
+*.DS_Store
+
