@@ -1,3 +1,6 @@
+---
+title: Planejamento do Projeto
+---
 # Planejamento do Projeto
 
 Abaixo estão detalhadas as diretrizes estratégicas e operacionais do projeto, organizadas através das **6 Guiding Questions** de Sistemas de Machine Learning.

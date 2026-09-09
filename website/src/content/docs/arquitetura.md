@@ -1,3 +1,6 @@
+---
+title: Arquitetura da Extensão Web
+---
 # Arquitetura da Extensão Web
 
 Este documento detalha o fluxo de interação, a stack tecnológica e a organização técnica da extensão de navegador do projeto **Inimigos do Prompt**.
