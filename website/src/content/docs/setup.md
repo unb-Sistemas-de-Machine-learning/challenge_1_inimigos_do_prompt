@@ -1,3 +1,6 @@
+---
+title: Guia de Configuração e Execução
+---
 # Guia de Configuração e Execução
 
 Este guia orienta na configuração do ambiente de desenvolvimento, instalação das dependências, execução dos scripts de ingestão e visualização local da documentação.

@@ -1,3 +1,6 @@
+---
+title: Execução PoC e API
+---
 # Guia de Execução: API de Inferência e PoC Integrada
 
 Este documento define a especificação técnica, o contrato de interface (API) e o passo a passo para a execução e integração da **Proof of Concept (PoC)** entre o serviço de inferência em Python (FastAPI) e a extensão de navegador (Chrome Manifest V3).
