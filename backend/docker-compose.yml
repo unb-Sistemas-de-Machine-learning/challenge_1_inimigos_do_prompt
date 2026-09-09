@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app/ml/artifacts:/app/app/ml/artifacts
+    environment:
+      - MODEL_BACKEND=sklearn
+      - API_V1_STR=/api/v1
+    restart: unless-stopped
