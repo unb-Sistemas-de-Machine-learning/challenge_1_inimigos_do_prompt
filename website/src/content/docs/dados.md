@@ -1,7 +1,6 @@
 ---
 title: Coleta e Ingestão de Dados
 ---
-# Coleta e Ingestão de Dados
 
 Esta seção detalha o fluxo de coleta, processamento de ruído e consolidação de dados utilizados para treinar e avaliar o modelo. Como o foco do projeto é identificar **sensacionalismo, clickbait e hype tecnológico**, o sistema consome dados via web scraping balanceando portais classificados como "sóbrios" (jornalismo factual) e textos focados em promessas exageradas.
 
