@@ -2,7 +2,6 @@
 title: Extensão Web Frontend
 ---
 
-# Especificação e Arquitetura da Extensão Web (Frontend)
 
 Este documento estabelece a especificação técnica completa, a estrutura do projeto e os componentes da **Extensão de Navegador (Manifest V3)** desenvolvida no diretório `extension/` utilizando **React, TypeScript, Vite e Tailwind CSS**.
 
