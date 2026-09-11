@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from models import AnalyzeRequest, AnalyzeResponse
-from services.llm import analyze_email_text
+# Fase A: classificador BERTimbau local
+# Fase B (futuro): trocar por services.hybrid que combina BERTimbau + Gemini
+from services.bertimbau import analyze_email_text
 
 router = APIRouter()
 

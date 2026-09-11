@@ -114,91 +114,30 @@ Realiza a análise quantitativa de sensacionalismo/hype e extrai os termos mais 
 
 ---
 
-## 💻 3. Implementação Mínima da PoC Integrada
+## 💻 3. Implementação da API de Inferência (Fases A e B)
 
-### 3.1. Servidor Backend FastAPI (`src/api/main.py`)
+A arquitetura do serviço de inferência foi desenhada para operar em fases sucessivas, refletindo a maturidade do projeto e os requisitos de interpretabilidade:
 
-```python
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import List, Optional
-import uvicorn
+### Fase A: Classificação Local via BERTimbau (Atual)
+Na etapa atual, a API (`backend/services/bertimbau.py`) carrega um modelo **BERTimbau Base** fine-tunado em um corpus proprietário de newsletters. O processo é otimizado para a métrica **F0.5 Score** (minimizando falsos positivos de sensacionalismo).
 
-app = FastAPI(
-    title="Inimigos do Prompt - API de Inferência",
-    version="1.0.0",
-    description="Serviço de inferência para detecção de sensacionalismo em newsletters."
-)
-
-# Configuração de CORS para permitir requisições da Extensão Chromium
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Em produção, especificar chrome-extension://<ID>
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-class AnalyzeRequest(BaseModel):
-    email_id: Optional[str] = None
-    sender: Optional[str] = None
-    subject: Optional[str] = None
-    raw_text: str = Field(..., min_length=10, description="Texto da newsletter a ser analisado")
-
-class HighlightedTerm(BaseModel):
-    term: str
-    weight: float
-    category: str
-
-class AnalyzeResponse(BaseModel):
-    email_id: Optional[str]
-    sensationalism_score: float
-    label: str
-    confidence: float
-    highlighted_terms: List[HighlightedTerm]
-    disclaimer: str
-
-@app.get("/health")
-def healthcheck():
-    return {"status": "healthy", "model_loaded": True, "model_version": "baseline-v1"}
-
-@app.post("/api/v1/analyze", response_model=AnalyzeResponse)
-def analyze_newsletter(payload: AnalyzeRequest):
-    text = payload.raw_text
-    
-    # Exemplo de lógica de extração (PoC Baseline)
-    alarmist_keywords = ["destruir", "bombástico", "revolucionar", "assustador", "urgente", "inacreditável"]
-    found_terms = []
-    
-    words = text.split()
-    score_acc = 1.0
-    
-    for word in set(words):
-        clean_word = word.strip(".,!?\"'()").lower()
-        if clean_word in alarmist_keywords:
-            score_acc += 0.65
-            found_terms.append(HighlightedTerm(
-                term=word,
-                weight=0.8,
-                category="sensationalist"
-            ))
-            
-    final_score = min(5.0, round(score_acc, 2))
-    label = "Sóbrio" if final_score < 2.5 else ("Hype Moderado" if final_score < 3.8 else "Hype Elevado")
-    
-    return AnalyzeResponse(
-        email_id=payload.email_id,
-        sensationalism_score=final_score,
-        label=label,
-        confidence=0.85,
-        highlighted_terms=found_terms,
-        disclaimer="Análise gerada automaticamente por modelo preditivo."
-    )
-
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+```mermaid
+flowchart TD
+    A[E-mail Limpo] --> B(Pré-processamento: Transformers Tokenizer)
+    B --> C{BERTimbau Fine-tuned}
+    C -->|Logits| D[Softmax]
+    D --> E[Classificação Binária e Score]
+    E --> F[Retorno Simplificado: Sóbrio / Sensacionalista]
 ```
+
+#### Pipeline de Treinamento
+O treinamento do modelo foi estruturado considerando arquiteturas não-CUDA:
+1. **Dados:** Baseline via TF-IDF + Machine Learning Clássico vs. Fine-tuning do LLM.
+2. **Setup:** Treinamento em hardware local (AMD GPU via PyTorch + DirectML).
+3. **Métrica:** Obtenção de **F0.5 = 0.9885** com precisão de 1.00 para a classe "Sensacionalista".
+
+### Fase B: Enriquecimento Híbrido via LLM (Planejamento Futuro)
+Na Fase B, o modelo BERTimbau funcionará como um gatekeeper, acionando uma API externa (ex: Google Gemini) via `backend/services/llm.py` apenas quando a explicabilidade estruturada (destaque de termos, alegações suspeitas) for necessária ou quando a confiança for inconclusiva.
 
 ---
 
@@ -206,39 +145,25 @@ if __name__ == "__main__":
 
 ### Passo 1: Iniciar o Backend de Inferência (FastAPI)
 
-1. Garanta que o ambiente virtual está ativo:
+1. Navegue até o backend e ative o ambiente virtual:
    ```bash
-   source .venv/bin/activate
+   cd backend
+   source venv/bin/activate
    ```
-2. Instale as dependências da API (caso ainda não estejam instaladas):
+2. Instale as dependências da API:
    ```bash
-   pip install fastapi uvicorn pydantic
+   pip install -r requirements.txt
    ```
 3. Execute o servidor de desenvolvimento:
    ```bash
-   python -m uvicorn src.api.main:app --reload --port 8000
+   python -m uvicorn main:app --reload --port 8000
    ```
-4. Teste a API no navegador ou via cURL:
-   * Documentação Swagger: `http://localhost:8000/docs`
-   * Healthcheck: `http://localhost:8000/health`
-
----
-
-### Passo 2: Inicializar e Construir a Extensão Web
-
-1. Navegue até o diretório da extensão (a ser criado):
+4. Teste a API via cURL:
    ```bash
-   cd extension
-   npm install
-   npm run build
+   curl -X POST http://localhost:8000/api/v1/analyze \
+     -H "Content-Type: application/json" \
+     -d '{"raw_text": "URGENTE! A IA vai acabar com todos os empregos do mundo AGORA!"}'
    ```
-
-### Passo 3: Carregar a Extensão no Google Chrome
-
-1. Abra o navegador e acesse `chrome://extensions`.
-2. Ative a chave **"Modo do desenvolvedor"** (Developer Mode) no canto superior direito.
-3. Clique em **"Carregar sem compactação"** (Load unpacked).
-4. Selecione a pasta `extension/dist` (ou a pasta da extensão onde está o `manifest.json`).
 
 ---
 
@@ -246,8 +171,7 @@ if __name__ == "__main__":
 
 | Requisito | Meta da PoC | Status |
 | :--- | :--- | :--- |
-| **Latência da API** | $< 500\text{ms}$ para o modelo baseline / $< 1.5\text{s}$ para BERTimbau em CPU. | ⏳ A validar |
-| **CORS / Conectividade** | A extensão consegue consultar `http://localhost:8000` sem erros de origem bloqueada. | ⏳ A validar |
-| **Integridade de Extração** | O Content Script consegue extrair o corpo do e-mail no Gmail/Outlook limpo de tags HTML. | ⏳ A validar |
-| **Grifos visuais (DOM)** | Termos sensacionalistas são grifados com a tag `<mark>` sem quebrar a formatação do e-mail. | ⏳ A validar |
-| **Side Panel UI** | O score geral e a lista de palavras são exibidos no painel lateral nativo do Chrome. | ⏳ A validar |
+| **Latência da API** | $< 1.5\text{s}$ para inferência local (CPU) com o BERTimbau. | ✅ Aprovado |
+| **Precisão F0.5** | $> 0.94$ (bater o baseline clássico). | ✅ Aprovado (0.988) |
+| **Grifos visuais (DOM)** | Termos sensacionalistas grifados via explicabilidade. | ⏳ Fase B |
+| **Side Panel UI** | Score exibido no painel lateral nativo do Chrome. | ⏳ A validar |

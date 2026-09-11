@@ -17,3 +17,6 @@ site/
 data/
 *.csv
 *.zip
+
+# Modelos
+models/
