@@ -1,0 +1,33 @@
+:root {
+  /* Cores base para o tema "Domínio Público" */
+  --md-primary-fg-color:        #003366;
+  --md-primary-fg-color--light: #1A4A8A;
+  --md-primary-fg-color--dark:  #001F40;
+  --md-primary-bg-color:        #ffffff;
+  --md-accent-fg-color:         #D4A017;
+  --md-accent-fg-color--transparent: rgba(212, 160, 23, 0.1);
+}
+
+/* Modo escuro (Dark mode) */
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color:        #1A4A8A;
+  --md-primary-fg-color--light: #2E6AC7;
+  --md-primary-fg-color--dark:  #003366;
+  --md-accent-fg-color:         #F0BE32;
+}
+
+/* Adicionando uma leve sombra ao cabeçalho para dar mais profundidade */
+.md-header {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Melhorando a aparência dos links para ficar mais elegante e moderno */
+.md-typeset a {
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.2s ease-in-out;
+}
+
+.md-typeset a:hover {
+  text-decoration-color: var(--md-accent-fg-color);
+}

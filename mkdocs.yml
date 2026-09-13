@@ -1,24 +1,28 @@
 site_name: Inimigos do Prompt
 site_description: Documentação do Challenge 1 da Equipe Inimigos do Prompt - Sistemas de Machine Learning 2026/02
 site_author: Equipe Inimigos do Prompt
+site_url: https://interacao-humano-computador.github.io/2026.2-Grupo08/
 
 theme:
   name: material
   language: pt
+  font:
+    text: Source Sans 3
+    code: JetBrains Mono
   palette:
     # Paleta de cores para o modo claro
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: indigo
-      accent: teal
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-7
         name: Mudar para modo escuro
     # Paleta de cores para o modo escuro
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: indigo
-      accent: teal
+      primary: custom
+      accent: custom
       toggle:
         icon: material/brightness-4
         name: Mudar para modo claro
@@ -27,9 +31,15 @@ theme:
     - navigation.sections
     - navigation.top
     - navigation.tracking
+    - navigation.instant
+    - navigation.instant.progress
     - search.suggest
     - search.highlight
     - content.code.copy
+    - content.tooltips
+
+extra_css:
+  - assets/css/extra.css
 
 markdown_extensions:
   - admonition
@@ -54,8 +64,9 @@ markdown_extensions:
 nav:
   - Início: index.md
   - Planejamento: planejamento.md
-  - Coleta de Dados: dados.md
-  - Arquitetura da Extensão: arquitetura.md
-  - Execução PoC & API: execucao_poc_api.md
-  - Extensão Web (Frontend): extensao_frontend.md
+  - Pipeline de Dados: dados.md
+  - Arquitetura:
+      - Extensão Web (Frontend): extensao_frontend.md
+      - Execução PoC & API (Backend): execucao_poc_api.md
+      - Estrutura Técnica: arquitetura.md
   - Guia de Configuração: setup.md
