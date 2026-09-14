@@ -2,7 +2,7 @@
 title: Execução da PoC Integrada
 ---
 
-Esta é a sequência para testar a integração disponível entre a API local e a extensão. Ela valida o fluxo heurístico atual; não exige modelo treinado.
+Esta é a sequência para testar a integração entre a API local e a extensão. Por padrão, ela usa os artefatos sklearn versionados em `backend/app/ml/artifacts/`; se eles não puderem ser carregados, a API usa o fallback heurístico.
 
 ## 1. Inicie a API
 
@@ -23,7 +23,7 @@ curl http://localhost:8000/health
 Resposta esperada:
 
 ```json
-{"status":"ok"}
+{"status":"healthy","model_loaded":true,"model_backend":"sklearn"}
 ```
 
 ## 2. Teste a análise diretamente
@@ -37,7 +37,7 @@ curl -X POST http://localhost:8000/api/v1/analyze \
   }'
 ```
 
-Sem artefatos de ML, a resposta terá disclaimer de heurísticas. O contrato completo está em [Backend API](../backend_api/).
+Confira `model_loaded` no health check para saber se os artefatos foram carregados. A resposta preserva o disclaimer de análise crítica; o contrato completo está em [Backend API](../backend_api/).
 
 ## 3. Compile e carregue a extensão
 
@@ -52,9 +52,10 @@ Em `chrome://extensions`, ative o modo de desenvolvedor e use **Carregar sem com
 ## 4. Valide o fluxo no webmail
 
 1. Mantenha a API em `localhost:8000`.
-2. Abra uma mensagem no Gmail ou Outlook Live com mais de 50 caracteres.
-3. Aguarde a extensão extrair o texto e enviar a requisição.
-4. Confirme, no corpo da mensagem, os grifos dos termos retornados pela API.
+2. Abra uma mensagem no Gmail ou Outlook Live com mais de 30 caracteres.
+3. Aguarde a extensão extrair o texto e enviar a requisição, ou use **Analisar E-mail da Aba Aberta** no side panel.
+4. Confirme os grifos no corpo da mensagem e o resultado real no side panel.
+5. Abra o dashboard pelo painel para conferir a mesma análise salva localmente; teste o slider ou o reporte de uma alegação para enviar feedback à API.
 
 Use o console de service worker da página de extensões e o terminal da API para investigar erros de comunicação.
 
@@ -65,7 +66,7 @@ Use o console de service worker da página de extensões e o terminal da API par
 | Extração Gmail/Outlook Live | Implementada com seletores de DOM. |
 | Requisição API, CORS e cache local | Implementados para `localhost`. |
 | Grifos no texto | Implementados como alteração simplificada de `innerHTML`. |
-| Modelo sklearn treinado | Pendente: não há artefatos no repositório. |
+| Artefatos sklearn | Versionados em `backend/app/ml/artifacts/` e carregados pelo backend padrão. |
 | BERTimbau na API | Pendente: loader ainda usa fallback. |
-| Resultado real no side panel/dashboard | Pendente: não há sincronização da resposta. |
+| Resultado real no side panel/dashboard | Implementado por broadcast e `chrome.storage.local`. |
 | IMAP, fila e produção | Planejamento; não existem nesta PoC. |

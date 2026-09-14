@@ -2,145 +2,73 @@
   <img src="website/src/assets/logo_inimigos.png" alt="Logo Inimigos do Prompt" width="300" style="border-radius: 50%;" />
 </p>
 
-# Challenge 1 - Equipe Inimigos do prompt - Sistemas de Machine Learning 2026/02
+# Challenge 1 — Inimigos do Prompt
 
-## Challenge Statement (Proposta)
+Projeto da disciplina **Sistemas de Machine Learning (2026/02)**. A proposta é ajudar leitores de newsletters de tecnologia em português a identificarem sinais de sensacionalismo (*hype*) e alegações que merecem leitura crítica.
 
-"Ajudar leitores de newsletters de tecnologia a consumir conteúdos com mais senso crítico direto no e-mail, por meio de um pipeline de Machine Learning que quantifica o nível de sensacionalismo do texto e sinaliza alegações com potencial de desinformação/hype.
-Saberemos que funcionou se:
-O modelo superar um baseline de heurísticas baseadas em palavras-chave em métricas de classificação ($F_1\text{-score}$ e calibração de probabilidade) em um dataset anotado do nicho;
-Em testes com leitores reais, o indicador alterar significativamente a confiança declarada dos usuários em notícias duvidosas/hiperbólicas e apresentar taxa de utilidade percebida superior a 70%."
+O repositório contém uma prova de conceito composta por pipeline de dados/ML, API local e extensão Chrome. A documentação publicada está em [unb-Sistemas-de-Machine-learning.github.io/challenge_1_inimigos_do_prompt](https://unb-sistemas-de-machine-learning.github.io/challenge_1_inimigos_do_prompt/).
 
----
+## Estado atual da PoC
 
-### Telas da Aplicação
+- A extensão Chrome observa Gmail e Outlook Live, extrai o texto visível da mensagem, consulta a API local e destaca termos retornados na própria página.
+- A API FastAPI produz score de sensacionalismo de 1 a 5, termos destacados e *claims* suspeitas. Ela carrega os artefatos sklearn versionados em `backend/app/ml/artifacts/`; se eles não estiverem disponíveis no ambiente, usa o fallback heurístico.
+- A análise real é armazenada no cache da extensão, exibida no side panel e disponibilizada ao dashboard. O painel também verifica a saúde da API e oferece exemplos de integração que consultam o backend de verdade.
+- Os controles de confiança e de falso positivo enviam feedback para a API. O pipeline de dados prepara datasets e avalia baselines TF-IDF com Naive Bayes e Regressão Logística; os datasets e métricas locais continuam fora do versionamento.
 
-<p align="center">
-  <img src="images/print_extensao_1.png" alt="Painel Lateral - Análise de Hype" width="48%" />
-  <img src="images/print_extensao_2.png" alt="Painel Lateral - Claims e Ações" width="48%" />
-</p>
+O campo `disinformation_risk` continua derivado por heurísticas; não representa uma segunda predição de desinformação. A confiança exibida também não é uma probabilidade calibrada.
 
-<p align="center">
-  <img src="images/print_dashboard_1.png" alt="Painel de Controle Completo (Dashboard)" width="100%" />
-</p>
+## Componentes
 
-## Objetivo de Negócio (Impacto Real)
+| Diretório | Finalidade |
+| --- | --- |
+| `src/` | Coleta, preparação de dados e treinamento/avaliação do baseline. |
+| `backend/` | API FastAPI, artefatos sklearn, explicabilidade por léxico, cache em memória e registro de feedback. |
+| `extension/` | Extensão Chrome Manifest V3, side panel e dashboard. |
+| `website/` | Documentação em Astro Starlight, publicada pelo GitHub Pages. |
 
-- **Público-alvo:** Assinantes de newsletters de tecnologia no Brasil.
-- **Impacto Prático:** Reduzir o pânico especulativo e blindar o leitor de desinformação técnica, permitindo um consumo crítico de notícias.
-- **KPIs de Sucesso:**
-  - **Mudança Comportamental de Confiança:** Medir a confiabilidade declarada do leitor antes de ver o score do modelo vs. depois (comportamento objetivo pré/pós-intervenção).
-  - **Taxa de Utilidade Percebida (> 70%):** Percentual de usuários que avaliam o relatório final como útil.
-  - **Engajamento com Explicabilidade (> 40%):** Cliques em "ver checagem detalhada" ou interação com os destaques e alertas.
+## Execução rápida
 
----
+Inicie a API em um terminal:
 
-## Objetivo de ML (Modelo e Avaliação)
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-api.txt
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
 
-- **Predição (Multi-Target):**
-  - **Target 1:** Score contínuo de sensacionalismo/clickbait (treinado em escala Likert de 1 a 5).
-  - **Target 2:** Probabilidade de desinformação/claim verification (treinado em categorias de claims).
-- **Métrica atual do baseline:** **F-0.5 Score**, priorizando precisão para reduzir falsos positivos. O script `src/train_baseline.py` também reporta precisão, recall e F1-score.
-- **Evolução prevista:** Tratar sensacionalismo e desinformação como tarefas separadas e avaliar calibração de probabilidade quando houver modelos e dados anotados para ambas as tarefas.
+Em outro terminal, compile a extensão:
 
----
+```bash
+cd extension
+npm install
+npm run build
+```
 
-## Escopo do Projeto
+No Chrome, abra `chrome://extensions`, ative o modo de desenvolvedor e carregue `extension/dist` como extensão sem compactação. A API deve permanecer disponível em `http://localhost:8000`.
 
-### O que o projeto TRATA (In-Scope)
-
-- Notícias e artigos extraídos de newsletters de tecnologia em Português (Brasil).
-
-- Processamento exclusivo de texto limpo (removendo HTML, menus e propagandas).
-- Relatórios gerados com interpretabilidade (destaque dos termos que influenciaram a predição).
-- Arquitetura em nuvem escalável com banco de dados em cache (para requisições repetidas).
-
-### O que o projeto NÃO TRATA (Out-of-Scope)
-
-- Análise de conteúdos multimídia (imagens, vídeos, áudios).
-
-- Fact-checking dinâmico em tempo real (ex: varrer o Google em tempo real para checar fontes).
-- Leitura ou moderação de e-mails pessoais/corporativos que não sejam newsletters cadastradas.
-
----
-
-## Planejamento e As 6 Guiding Questions Refatoradas
-
-**1. Dados: Aquisição, Representatividade e Rotulação (Ground Truth)**
-
-- **A Pergunta:** De onde extrairemos um volume histórico de newsletters que reflita o hype atual, e como garantir uma anotação confiável sabendo que "fake news tech" geralmente são promessas não comprovadas?
-- **Atividade:**
-  1) Mapear 10 portais/newsletters e criar script de web scraping.
-  2) Criar um **Manual Simples de Anotação**, utilizando escala Likert (1 a 5) para sensacionalismo e tags categóricas para desinformação.
-- **Recurso:** Terminal Linux, Node.js (Cheerio/Puppeteer) ou Python (BeautifulSoup). Manual de anotação e ferramenta de rotulação.
-- **Responsável:** Membro 1.
-- **Prazo:** 28/08/2026.
-
-**2. Dados: Processamento e Ruído**
-
-- **A Pergunta:** Como o pipeline vai limpar as tags HTML, links de patrocinadores e cabeçalhos dos e-mails, isolando apenas o texto das notícias para o classificador?
-- **Atividade:** Desenvolver uma função de sanitização usando expressões regulares (Regex) para receber o HTML do e-mail e cuspir apenas texto limpo.
-- **Recurso:** VSCode/Cursor AI, bibliotecas de conversão HTML-para-texto e um dataset de teste de 5 e-mails.
-- **Responsável:** Membro 2.
-- **Prazo:** 28/08/2026.
-
-**3. Usuário: Integração, Atrito e Interpretabilidade**
-
-- **A Pergunta:** Como entregar o relatório de sensacionalismo com baixo atrito e explicar o "porquê" da classificação sem interromper agressivamente a leitura do usuário?
-- **Atividade:** Desenhar o fluxo do usuário (ex: o bot envia um resumo no topo da mensagem original) e definir como a explicação (interpretabilidade) será exibida.
-- **Recurso:** Excalidraw ou Figma para desenhar o fluxo e questionário de validação com colegas.
-- **Responsável:** Membro 3.
-- **Prazo:** 04/09/2026.
-
-**4. Modelo: Baseline, Tradeoffs e Valor Justificado**
-
-- **A Pergunta:** Qual regra de palavras-chave (baseline) usaremos como ponto de partida e qual métrica (ex: F1-Score e Calibração) provará que o esforço computacional do ML realmente compensa?
-- **Atividade:** Codificar um baseline simples (ex: `if` com contador de palavras como "revolucionário" ou "urgente") e definir o limiar de acurácia que o modelo de ML precisa bater para ser aceito.
-- **Recurso:** Ambiente de desenvolvimento (Python/Jupyter) e o dataset limpo da etapa 2.
-- **Responsável:** Membro 4.
-- **Prazo:** 04/09/2026.
-
-**5. Produção: Arquitetura de Ingestão e Custo**
-
-- **A Pergunta:** Como estruturar o recebimento simultâneo dessas newsletters mantendo o custo de infraestrutura baixo e evitando o gargalo de processamento?
-- **Atividade:** Criar a Prova de Conceito (PoC) de um servidor conectado a uma conta de e-mail via IMAP, isolado em um contêiner, que recebe as mensagens e as enfileira para processamento.
-- **Recurso:** Docker, Node.js ou C#/.NET, e uma conta de e-mail de teste dedicada.
-- **Responsável:** Membro 5.
-- **Prazo:** 11/09/2026.
-
-**6. Ética: Transparência e Danos**
-
-- **A Pergunta:** Se o modelo cometer um falso positivo e classificar a notícia legítima de um criador de conteúdo como "Fake/Sensacionalista", qual é o mecanismo de mitigação de danos à reputação?
-- **Atividade:** Redigir o termo de isenção de responsabilidade (disclaimer) que acompanhará as análises e criar um canal de feedback para usuários reportarem erros do modelo.
-- **Recurso:** Documento de texto colaborativo.
-- **Responsável:** Membros 1 e 2 (em par).
-- **Prazo:** 11/09/2026.
-
----
-
-## Interface e Funcionalidades (Extensão Web)
-
-A extensão web (Manifest V3) foi construída com **React e Tailwind CSS**, apresentando uma interface rica e interativa para o usuário final:
-
-- **Painel Lateral (Side Panel):** Análise em tempo real do e-mail aberto com métricas de sensacionalismo, **Feature Importance** (mini-barras horizontais indicando o peso de cada termo detectado pelo modelo) e uma coleta de confiança interativa.
-- **Painel de Controle (Dashboard):** Uma aba em tela cheia (SPA) gerada dinamicamente contendo o relatório consolidado de todas as alegações, níveis de severidade, justificativas técnicas da IA e opções de exportação/reporte.
-
-> [!NOTE]
-> O repositório contém uma PoC da interface e da API. Sem artefatos de modelo em `backend/app/ml/artifacts/`, a API usa regras heurísticas; o resultado real ainda não é sincronizado com o painel lateral e o dashboard. Consulte a documentação em `website/src/content/docs/` para o estado técnico detalhado.
-
-## Documentação
-
-Para visualizar a documentação localmente:
+Para executar o site de documentação:
 
 ```bash
 cd website
 npm install
-npm run dev -- --background
+npm run dev
 ```
 
-Abra `http://127.0.0.1:4321`. Para conferir ou parar o servidor:
+Consulte o [guia de configuração](https://unb-sistemas-de-machine-learning.github.io/challenge_1_inimigos_do_prompt/setup/) e a [execução integrada da PoC](https://unb-sistemas-de-machine-learning.github.io/challenge_1_inimigos_do_prompt/execucao_poc_api/) para o fluxo completo, incluindo pipeline de dados, Docker e limitações conhecidas.
 
-```bash
-npm run dev -- status
-npm run dev -- stop
-```
+## Objetivos de avaliação
+
+O baseline prioriza precisão por meio do **F-0.5**, reduzindo falsos positivos ao classificar textos legítimos como sensacionalistas. A evolução planejada é separar formalmente as tarefas de sensacionalismo e desinformação, comparar modelos com dados anotados e medir calibração de probabilidade e utilidade percebida por leitores.
+
+## Telas da aplicação
+
+<p align="center">
+  <img src="images/print_extensao_1.png" alt="Painel lateral de análise de hype" width="48%" />
+  <img src="images/print_extensao_2.png" alt="Painel lateral com claims e ações" width="48%" />
+</p>
+
+<p align="center">
+  <img src="images/print_dashboard_1.png" alt="Dashboard da PoC" width="100%" />
+</p>

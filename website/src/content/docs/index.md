@@ -20,6 +20,9 @@ Este projeto é desenvolvido para a disciplina de **Sistemas de Machine Learning
 
 Nossa missão é combater o sensacionalismo e a desinformação no consumo de notícias técnicas e newsletters de tecnologia por meio de inteligência artificial aplicada.
 
+> [!IMPORTANT]
+> A implementação disponível é uma PoC local. Ela analisa mensagens abertas no Gmail e Outlook Live com artefatos sklearn versionados, destaca termos no webmail e apresenta a análise no side panel e dashboard. O risco de desinformação continua heurístico: não há uma segunda predição independente nem fact-checking em tempo real.
+
 ---
 
 ## Declaração do Desafio (Challenge Statement)
@@ -30,6 +33,8 @@ Nossa missão é combater o sensacionalismo e a desinformação no consumo de no
 
 ## Objetivos do Projeto
 
+As seções seguintes registram os objetivos de produto e de avaliação do projeto. Elas não descrevem funcionalidades já entregues; para o estado implementado, consulte [Arquitetura da Extensão](../arquitetura/), [Extensão Web](../extensao_frontend/) e [Backend API](../backend_api/).
+
 ### Objetivo de Negócio (Impacto Real)
 * **Público-alvo:** Assinantes de newsletters de tecnologia no Brasil.
 * **Impacto Prático:** Reduzir o pânico especulativo e blindar o leitor de desinformação técnica, permitindo um consumo crítico de notícias.
@@ -39,14 +44,14 @@ Nossa missão é combater o sensacionalismo e a desinformação no consumo de no
     * **CSAT (Satisfação e Credibilidade):** Nota média de satisfação $\ge 4.0/5.0$ em testes de uso contínuo.
 
 ### Objetivo de ML (Modelo e Avaliação)
-* **Predição atual:** Identificar e classificar o nível de sensacionalismo e exagero (*hype*) em textos jornalísticos/informativos.
-* **Métrica atual do baseline:** **F-0.5 Score** (Priorizando a **Precisão**).
+* **Tarefa avaliada no baseline:** Identificar e classificar o nível de sensacionalismo e exagero (*hype*) em textos jornalísticos/informativos.
+* **Métrica do baseline:** **F-0.5 Score** (priorizando a **precisão**).
 * **Justificativa Técnica:**
     > [!IMPORTANT]
     > O erro mais prejudicial em moderação de conteúdo é o **Falso Positivo** (rotular incorretamente um artigo legítimo ou autor sério como sensacionalista). Ao focar no F-0.5 Score, aumentamos o peso da Precisão sobre a revocação (*recall*), minimizando esses alarmes falsos e fortalecendo a credibilidade das predições do sistema.
 
 > [!NOTE]
-> A inferência disponível é uma PoC: sem artefatos sklearn versionados, a API usa heurísticas de linguagem. O risco de desinformação ainda não é uma predição independente. Veja [Dados](../dados/) e [Backend API](../backend_api/) para as limitações atuais.
+> A inferência disponível é uma PoC com artefatos sklearn versionados. O risco de desinformação é derivado do score e das regras de alegações, não uma predição independente. Veja [Dados](../dados/) e [Backend API](../backend_api/) para as limitações atuais.
 
 ---
 
