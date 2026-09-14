@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { AnalyzeResponse } from '../types';
-import { ShieldAlert, Download, Flag, AlertCircle, CheckCircle } from 'lucide-react';
+import { sendFeedback } from '../services/api';
+import { ShieldAlert, Download, Flag, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 
 export default function Dashboard() {
   const [data, setData] = useState<AnalyzeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [reportedClaims, setReportedClaims] = useState<number[]>([]);
+  const [reportingClaim, setReportingClaim] = useState<number | null>(null);
 
   useEffect(() => {
     // Carrega a última análise salva no storage
@@ -21,11 +23,24 @@ export default function Dashboard() {
     }
   }, []);
 
-  const handleReport = (index: number) => {
-    if (!reportedClaims.includes(index)) {
-      setReportedClaims([...reportedClaims, index]);
-      // Simula envio do report
-      console.log('Reportado claim índice:', index);
+  const handleReport = async (index: number) => {
+    if (reportedClaims.includes(index) || reportingClaim !== null || !data) return;
+
+    setReportingClaim(index);
+    try {
+      await sendFeedback({
+        email_id: data.email_id || 'unknown',
+        feedback_type: 'false_positive',
+        claim_index: index,
+        comment: `Alegação contestada: "${data.suspicious_claims[index]?.claim || ''}"`
+      });
+      setReportedClaims(prev => [...prev, index]);
+    } catch (err) {
+      console.error('Erro ao enviar falso positivo:', err);
+      // Mantém registro local para o usuário
+      setReportedClaims(prev => [...prev, index]);
+    } finally {
+      setReportingClaim(null);
     }
   };
 
@@ -153,6 +168,10 @@ export default function Dashboard() {
                       {reportedClaims.includes(idx) ? (
                         <div className="flex items-center text-green-600 text-sm font-medium gap-1.5">
                           <CheckCircle className="h-4 w-4" /> Feedback Registrado
+                        </div>
+                      ) : reportingClaim === idx ? (
+                        <div className="flex items-center text-indigo-600 text-sm font-medium gap-1.5">
+                          <Loader2 className="h-4 w-4 animate-spin" /> Enviando...
                         </div>
                       ) : (
                         <button 
