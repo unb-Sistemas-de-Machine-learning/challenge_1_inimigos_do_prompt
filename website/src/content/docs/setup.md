@@ -2,110 +2,75 @@
 title: Guia de Configuração e Execução
 ---
 
-Este guia orienta na configuração do ambiente de desenvolvimento, instalação das dependências, execução dos scripts de ingestão e visualização local da documentação.
+O repositório tem três projetos independentes: o pipeline Python/ML na raiz, a API em `backend/` e a extensão em `extension/`. O site de documentação é um quarto projeto, em `website/`.
 
----
+## 1. Pipeline Python e dados
 
-## 1. Configurando o Ambiente Virtual Python
-
-Recomendamos utilizar um ambiente virtual (`venv`) para gerenciar as dependências do projeto de forma isolada.
-
-No seu terminal, execute os seguintes comandos:
-
-=== "macOS / Linux"
-    ```bash
-    # Criar o ambiente virtual na pasta .venv
-    python3 -m venv .venv
-
-    # Ativar o ambiente virtual
-    source .venv/bin/activate
-    ```
-
-=== "Windows (CMD)"
-    ```cmd
-    :: Criar o ambiente virtual na pasta .venv
-    python -m venv .venv
-
-    :: Ativar o ambiente virtual
-    .venv\Scripts\activate.bat
-    ```
-
-=== "Windows (PowerShell)"
-    ```powershell
-    # Criar o ambiente virtual na pasta .venv
-    python -m venv .venv
-
-    # Ativar o ambiente virtual
-    .venv\Scripts\Activate.ps1
-    ```
-
----
-
-## 2. Instalando as Dependências
-
-Com o ambiente virtual ativado, instale os pacotes necessários descritos em `requirements.txt`:
+Na raiz do repositório, crie e ative um ambiente virtual:
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-> [!NOTE]
-> Este comando irá instalar as bibliotecas de processamento (`pandas`, `beautifulsoup4`, etc.) e as ferramentas necessárias para rodar este site de documentação (`mkdocs` e `mkdocs-material`).
+Gere os dados e avalie o baseline:
 
----
-
-## 3. Executando os Scripts de Coleta de Dados
-
-Com todas as dependências instaladas, você pode rodar os scripts de ingestão a partir da pasta raiz do projeto.
-
-### A. Consolidar o Fake.br-Corpus
-Este script faz o download do dataset de referência e faz o parse de seus metadados:
 ```bash
-python src/downloader_fake_datasets.py
-```
-* **Destino:** Salva o arquivo consolidado em `data/fake_br_corpus.csv`.
-
-### B. Coletar dados do Boatos.org
-Executa o scraper para obter fake news recentes e suas checagens:
-```bash
-# Executa com as configurações padrão (5 páginas, 1s de delay)
-python src/scraper_fake_news.py
-
-# Personalizando número de páginas e delay entre requisições
-python src/scraper_fake_news.py --pages 10 --delay 2.0
-```
-* **Destino:** Salva o arquivo em `data/scraped_fake_news.csv`.
-
-### C. Coletar dados de Notícias de Tecnologia
-Executa o scraper de portais de notícias de tecnologia (Manual do Usuário e G1):
-```bash
-# Executa com as configurações padrão (3 páginas, 1s de delay)
-python src/scraper_tech_news.py
-
-# Personalizando número de páginas e delay entre requisições
-python src/scraper_tech_news.py --pages 5 --delay 1.5
-```
-* **Destino:** Salva o arquivo em `data/tech_news.csv`.
-
----
-
-## 4. Visualizando a Documentação Localmente
-
-O MkDocs permite visualizar as alterações nas páginas Markdown em tempo real usando um servidor web local.
-
-### Iniciar o Servidor de Desenvolvimento
-Rode o comando abaixo na raiz do projeto:
-```bash
-mkdocs serve
+python src/build_sensacionalismo_dataset.py
+python src/generate_sample_dataset.py
+python src/merge_datasets.py
+python src/train_baseline.py
 ```
 
-* **Acesso:** Abra o navegador em [http://127.0.0.1:8000](http://127.0.0.1:8000).
-* **Hot Reload:** O site é atualizado automaticamente conforme você edita e salva arquivos na pasta `docs/`.
+Os comandos de download e scraping exigem acesso à internet. Os dados resultantes ficam em `data/` e não são versionados.
 
-### Gerar os Arquivos HTML (Build de Produção)
-Se desejar gerar a versão estática final para hospedagem no GitHub Pages ou outro servidor web:
+## 2. API FastAPI
+
+Em outro terminal, instale as dependências específicas e inicie a API:
+
 ```bash
-mkdocs build --strict
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-api.txt
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
-* **Destino:** Os arquivos estáticos finais serão gerados no diretório `site/` na raiz do projeto.
-* O parâmetro `--strict` garante que a compilação falhe caso existam links quebrados ou avisos pendentes.
+
+Alternativamente, com Docker:
+
+```bash
+cd backend
+docker compose up --build
+```
+
+A API fica disponível em `http://localhost:8000`; a especificação OpenAPI está em `http://localhost:8000/api/v1/openapi.json`. O endpoint `GET /health` responde em `http://localhost:8000/health`.
+
+> [!IMPORTANT]
+> Sem `backend/app/ml/artifacts/model.joblib` e `vectorizer.joblib`, a API usa o classificador heurístico. O script `train_baseline.py` avalia modelos, mas ainda não exporta esses artefatos.
+
+## 3. Extensão Chrome
+
+```bash
+cd extension
+npm install
+npm run build
+```
+
+No Chrome, abra `chrome://extensions`, ative o modo de desenvolvedor e carregue a pasta `extension/dist`. A extensão possui permissões apenas para Gmail, Outlook Live e `http://localhost:8000`.
+
+## 4. Site de documentação
+
+O site usa Astro Starlight, não MkDocs. Para executá-lo localmente:
+
+```bash
+cd website
+npm install
+npm run dev
+```
+
+Para gerar o site estático:
+
+```bash
+npm run build
+```
