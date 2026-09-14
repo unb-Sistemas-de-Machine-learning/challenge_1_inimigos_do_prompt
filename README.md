@@ -36,8 +36,8 @@ Em testes com leitores reais, o indicador alterar significativamente a confianç
 - **Predição (Multi-Target):**
   - **Target 1:** Score contínuo de sensacionalismo/clickbait (treinado em escala Likert de 1 a 5).
   - **Target 2:** Probabilidade de desinformação/claim verification (treinado em categorias de claims).
-- **Métrica Principal:** **F1-Score** e **Calibração de Probabilidade**.
-- **Justificativa:** Tratar sensacionalismo e desinformação como tarefas separadas evita confundir notícias verdadeiras e hiperbólicas com mentiras redigidas em tom neutro. O F1-score balanceia a detecção, enquanto a calibração garante que o score de probabilidade exibido ao usuário reflita a confiança real do modelo.
+- **Métrica atual do baseline:** **F-0.5 Score**, priorizando precisão para reduzir falsos positivos. O script `src/train_baseline.py` também reporta precisão, recall e F1-score.
+- **Evolução prevista:** Tratar sensacionalismo e desinformação como tarefas separadas e avaliar calibração de probabilidade quando houver modelos e dados anotados para ambas as tarefas.
 
 ---
 
@@ -120,3 +120,23 @@ A extensão web (Manifest V3) foi construída com **React e Tailwind CSS**, apre
 
 - **Painel Lateral (Side Panel):** Análise em tempo real do e-mail aberto com métricas de sensacionalismo, **Feature Importance** (mini-barras horizontais indicando o peso de cada termo detectado pelo modelo) e uma coleta de confiança interativa.
 - **Painel de Controle (Dashboard):** Uma aba em tela cheia (SPA) gerada dinamicamente contendo o relatório consolidado de todas as alegações, níveis de severidade, justificativas técnicas da IA e opções de exportação/reporte.
+
+> [!NOTE]
+> O repositório contém uma PoC da interface e da API. Sem artefatos de modelo em `backend/app/ml/artifacts/`, a API usa regras heurísticas; o resultado real ainda não é sincronizado com o painel lateral e o dashboard. Consulte a documentação em `website/src/content/docs/` para o estado técnico detalhado.
+
+## Documentação
+
+Para visualizar a documentação localmente:
+
+```bash
+cd website
+npm install
+npm run dev -- --background
+```
+
+Abra `http://127.0.0.1:4321`. Para conferir ou parar o servidor:
+
+```bash
+npm run dev -- status
+npm run dev -- stop
+```

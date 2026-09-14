@@ -1,121 +1,80 @@
 ---
 title: Backend API
 ---
-# Backend API - Inimigos do Prompt
 
-O projeto utiliza um backend em **FastAPI** para realizar as predições de inteligência artificial sobre newsletters capturadas pelo frontend, com foco no suporte à interpretabilidade.
+O backend é uma API FastAPI para a PoC de análise de newsletters. Ele recebe o texto extraído pela extensão, produz uma classificação de hype e devolve termos e frases que justificam o resultado.
 
-## Stack Tecnológica
+## Estado do modelo
 
-* **Framework API:** FastAPI / Uvicorn (Alta performance e geração automática de Swagger/OpenAPI)
-* **Validação de Dados:** Pydantic (Garante tipagem forte baseada no contrato do TypeScript da extensão)
-* **Modelos ML:** Suporte duplo via `ModelLoader` para o pipeline base com scikit-learn (Regressão Logística + TF-IDF) e fallback avançado via BERTimbau (`transformers`).
-* **Cache em Memória:** `cachetools` (TTL Cache de 1 hora para evitar reprocessamento de newsletters muito comuns).
+`ModelLoader` tenta carregar `backend/app/ml/artifacts/model.joblib` e `vectorizer.joblib`. Esses artefatos não estão versionados. Quando ausentes, o serviço usa um classificador heurístico com:
 
-## Arquitetura de Pastas (`backend/`)
+- percentual de palavras em caixa alta;
+- densidade de exclamações;
+- ocorrências de um léxico de termos extremos, como “revolucionário”, “urgente” e “destruir”.
 
-A estrutura interna do servidor foi desenhada para separar domínios:
+Com artefatos sklearn válidos, o código aplica o vetorizador ao texto, usa `predict_proba` e adiciona um pequeno ajuste heurístico. A opção de configuração `MODEL_BACKEND=bertimbau` ainda não carrega nem executa BERTimbau; ela mantém o fallback.
 
-```text
-app/
-├── api/
-│   └── v1/
-│       └── endpoints/
-│           ├── analyze.py     # Ponto principal de predição
-│           └── feedback.py    # Recepção de avaliações de usuários
-├── ml/
-│   ├── artifacts/             # Modelos serializados (.joblib)
-│   └── model_loader.py        # Singleton para carregar o modelo apenas uma vez na inicialização
-├── schemas/
-│   ├── analyze.py             # Modelos Pydantic (AnalyzeRequest, AnalyzeResponse)
-│   └── feedback.py            # Modelos Pydantic (FeedbackRequest)
-├── services/
-│   ├── analyzer.py            # Orquestração principal
-│   ├── classifier.py          # Wrapper de predição sobre o ModelLoader
-│   ├── explainer.py           # Interpretabilidade (SHAP/LIME ou Heurísticas textuais)
-│   └── preprocessor.py        # Limpeza do HTML extraído e engenharia de features
-└── utils/
-    └── cache.py               # Configurações de caching para otimizar tempo de resposta
+## Rotas
+
+### `GET /health`
+
+Responde apenas se o processo está ativo:
+
+```json
+{"status":"ok"}
 ```
-
----
-
-## Documentação de Endpoints
 
 ### `POST /api/v1/analyze`
 
-Endpoint responsável por receber o conteúdo extraído da aba do navegador, processá-lo e devolver as pontuações e termos destacados.
+Entrada:
 
-**Corpo da Requisição (JSON):**
 ```json
 {
-  "email_id": "uuid-opcional",
+  "email_id": "opcional",
   "sender": "newsletter@exemplo.com",
-  "subject": "Título Sensacionalista Aqui",
-  "raw_text": "Corpo limpo do email sem scripts e footers..."
+  "subject": "Assunto opcional",
+  "raw_text": "Texto ou HTML da newsletter"
 }
 ```
 
-**Corpo da Resposta (JSON):**
-Retorna o score de 1 a 5, o label textual e arrays de termos para a extensão grifar:
+Saída:
+
 ```json
 {
-  "email_id": "123e4567-e89b-12d3-a456-426614174000",
-  "sensationalism_score": 4.2,
-  "label": "Hype Elevado",
+  "email_id": "uuid-gerado-ou-informado",
+  "sensationalism_score": 1.5,
+  "label": "Sóbrio",
   "confidence": 0.95,
-  "highlighted_terms": [
-    {
-      "term": "Revolucionário",
-      "weight": 0.9,
-      "category": "hype"
-    }
-  ],
+  "highlighted_terms": [],
   "disclaimer": "Os resultados são baseados em heurísticas. Analise criticamente.",
-  "disinformation_risk": 78,
-  "suspicious_claims": [
-    {
-      "claim": "A substituição de 90% dos programadores",
-      "explanation": "Hype exagerado, projeção não comprovada por fontes técnicas.",
-      "severity": "moderate"
-    }
-  ]
+  "disinformation_risk": 30,
+  "suspicious_claims": []
 }
 ```
+
+O score varia de 1 a 5 e o label é `Sóbrio`, `Hype Moderado` ou `Hype Elevado`. A confiança atual é um valor fixo condicionado ao score, não uma probabilidade calibrada. `disinformation_risk` é derivado do score e recebe um incremento se houver claim de severidade alta; não representa uma segunda predição independente.
 
 ### `POST /api/v1/feedback`
 
-Coleta feedback dos usuários para medir a confiança e apontar falsos positivos, viabilizando o "Active Learning" futuro.
+Recebe `false_positive` ou `confidence_slider` e registra uma linha JSON no arquivo local `backend/feedback_log.jsonl`. O feedback não dispara retreinamento automático.
 
-**Corpo da Requisição (JSON):**
-```json
-{
-  "email_id": "123e4567-e89b-12d3-a456-426614174000",
-  "feedback_type": "false_positive",
-  "claim_index": 2,
-  "slider_value": null,
-  "comment": "Modelo errou aqui, o assunto é científico de fato"
-}
-```
+## Cache e limitações
 
----
+A API mantém até 500 respostas em um `TTLCache` de uma hora. A chave usa somente os primeiros 200 caracteres do texto original; mensagens diferentes com o mesmo prefixo podem, portanto, compartilhar a resposta em cache. O objeto em cache também pode ter seu `email_id` substituído na próxima chamada.
 
-## Como Rodar Localmente
+O CORS aceita qualquer origem para facilitar o desenvolvimento da extensão. Antes de uma publicação, ele deve ser restringido ao identificador da extensão.
 
-Recomendamos utilizar a configuração via **Docker** para garantir consistência e facilitar a orquestração.
+## Execução
 
-### Via Docker Compose
-Na pasta raiz do backend (`backend/`), execute:
-```bash
-docker-compose up --build
-```
-O servidor estará disponível em `http://localhost:8000`. Acesse `http://localhost:8000/docs` para visualizar a interface interativa do Swagger.
-
-### Via Python Venv (Desenvolvimento)
 ```bash
 cd backend
-python3 -m venv venv
-source venv/bin/activate
 pip install -r requirements-api.txt
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Com Docker:
+
+```bash
+cd backend
+docker compose up --build
 ```
