@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="website/src/assets/logo_inimigos.png" alt="Logo Inimigos do Prompt" width="300" style="border-radius: 50%;" />
+</p>
+
 # Challenge 1 - Equipe Inimigos do prompt - Sistemas de Machine Learning 2026/02
 
 ## Challenge Statement (Proposta)

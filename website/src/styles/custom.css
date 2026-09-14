@@ -38,3 +38,12 @@
   text-align: center;
   word-break: break-all;
 }
+
+/* Make header logo and hero logo circular */
+.site-title img,
+.hero img,
+[aria-label="Inimigos do Prompt"] img {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
