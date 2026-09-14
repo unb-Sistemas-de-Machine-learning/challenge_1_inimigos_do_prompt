@@ -56,7 +56,18 @@ O score varia de 1 a 5 e o label é `Sóbrio`, `Hype Moderado` ou `Hype Elevado`
 
 ### `POST /api/v1/feedback`
 
-Recebe `false_positive` ou `confidence_slider` e registra uma linha JSON no arquivo local `backend/feedback_log.jsonl`. O feedback não dispara retreinamento automático.
+Recebe `false_positive` ou `confidence_slider` e registra uma linha JSON no arquivo local `backend/feedback_log.jsonl`. `email_id` é obrigatório; `claim_index`, `slider_value` e `comment` são opcionais.
+
+```json
+{
+  "email_id": "id-da-analise",
+  "feedback_type": "false_positive",
+  "claim_index": 0,
+  "comment": "A alegação possui fonte verificável."
+}
+```
+
+O feedback não dispara retreinamento automático. A extensão atual também não chama essa rota: seus controles de feedback são somente visuais.
 
 ## Cache e limitações
 
