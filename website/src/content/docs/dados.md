@@ -1,76 +1,62 @@
 ---
-title: Coleta e Ingestão de Dados
+title: Coleta e Preparação de Dados
 ---
 
-Esta seção detalha o fluxo de coleta, processamento de ruído e consolidação de dados utilizados para treinar e avaliar o modelo. Como o foco do projeto é identificar **sensacionalismo, clickbait e hype tecnológico**, o sistema consome dados via web scraping balanceando portais classificados como "sóbrios" (jornalismo factual) e textos focados em promessas exageradas.
+Esta página descreve o pipeline que existe hoje no diretório `src/`. Os arquivos em `data/` são gerados localmente, não fazem parte do repositório e precisam ser produzidos antes do treinamento.
 
----
+## Fontes e saídas atuais
 
-## Visão Geral dos Datasets Gerados
+| Script | Fonte | Saída | Uso atual |
+| --- | --- | --- | --- |
+| `build_sensacionalismo_dataset.py` | Fake.br-Corpus | `dataset_sensacionalismo.csv` | Fonte principal para o classificador binário de hype. |
+| `build_claims_dataset.py` | FactChecks.br (Hugging Face) | `dataset_claims.csv` | Preparação para a tarefa futura de alegações; ainda não é consumido pela API. |
+| `scraper_tech_news.py` | Manual do Usuário e G1 Tecnologia | `tech_news.csv` | Coleta de textos tecnológicos não rotulados. |
+| `scraper_fake_news.py` | Boatos.org | `scraped_fake_news.csv` | Coleta de boatos e textos de desmentido; ainda não entra no merge de treino. |
+| `generate_sample_dataset.py` | Exemplos sintéticos do projeto | `dataset_hype_treino.csv` | Dataset demonstrativo para validar o pipeline. |
+| `merge_datasets.py` | Datasets de sensacionalismo e de amostra | `dataset_final_treino.csv`, `train.csv`, `test.csv` | Consolidação, deduplicação, balanceamento e split estratificado. |
 
-Os dados coletados são armazenados na pasta `data/` nos seguintes arquivos:
+> [!NOTE]
+> O diretório `data/` está no `.gitignore`. Assim, não há dataset nem métricas reproduzíveis versionadas neste repositório.
 
-| Arquivo | Origem | Descrição | Registros |
-| :--- | :--- | :--- | :--- |
-| `tech_sobrio.csv` | `Manual do Usuário` & `G1 Tecnologia` (Scraping) | Notícias factuais e análises críticas sobre tecnologia para servir como base de textos confiáveis (não sensacionalistas). | Variável |
-| `tech_hype.csv` | Portais de Criptomoedas, Tech Clickbait (Scraping) | Coleta de artigos com títulos caça-cliques, viés apocalíptico sobre IA ou promessas hiperbólicas. | Variável |
-| `dataset_hype_treino.csv` | Pipeline Interno (`feature_engineering.py`) | Dataset consolidado contendo textos limpos de ambos os CSVs anteriores, enriquecido com atributos estatísticos de texto (sinais de hype). | Variável |
+## Pipeline de sensacionalismo
 
----
+`build_sensacionalismo_dataset.py` baixa o Fake.br-Corpus, remove textos fora dos limites de tamanho e textos com alta incidência de termos político-partidários. Em seguida, equilibra as duas classes e salva texto, rótulo, target e algumas métricas linguísticas extraídas do corpus.
 
-## Detalhes dos Scripts de Ingestão (`src/`)
+No estado atual, `target=1` corresponde à classe `fake` do corpus e é renomeado para `sensacionalista`; `target=0` corresponde à classe `true` e é renomeado para `sobrio`. Essa é uma aproximação para a tarefa de hype, não uma anotação humana direta de sensacionalismo. Além disso, o filtro de tecnologia é apenas preferencial: a verificação estrita está desativada no código. Esses limites devem ser considerados ao interpretar resultados.
 
-### 1. Scraper de Tecnologia Sóbria (`scraper_tech_sobrio.py`)
+## Alegações e risco de desinformação
 
-Utilizado para construir o conjunto de dados sob o domínio de tecnologia com viés neutro, descritivo e factual. Ele raspa duas fontes principais:
+`build_claims_dataset.py` baixa FactChecks.br, normaliza os rótulos para `legitimo` (0) e `desinformacao` (1), remove alegações curtas e tenta balancear as classes. Atualmente o filtro de categoria aceita todas as categorias para manter volume.
 
-* **Manual do Usuário (`manualdousuario.net`):**
-    * Foco em análises críticas e notícias aprofundadas sobre tecnologia e sociedade.
-    * Extrai os textos principais a partir da classe `.e-content`.
-* **G1 Tecnologia (`g1.globo.com/tecnologia`):**
-    * Notícias factuais de tecnologia no Brasil sem exageros estruturais.
-    * Extrai artigos iterando pelo feed de paginação pública e obtendo parágrafos com a classe `.content-text__container`.
-* **Parâmetros de Linha de Comando:**
-    * `--pages` (default: 3): Páginas de listagem raspadas por fonte.
-    * `--delay` (default: 1.0): Tempo de espera entre as requisições.
+O arquivo gerado é preparatório. O endpoint da API ainda não usa um classificador treinado com essas alegações: o campo `disinformation_risk` é uma heurística derivada do score de hype e das frases encontradas.
 
----
+## Scrapers
 
-### 2. Scraper de Tecnologia Sensacionalista (`scraper_tech_hype.py`)
+Os dois scrapers usam `requests`, BeautifulSoup, um `User-Agent` de navegador e o parâmetro `--delay` para reduzir a carga sobre os sites.
 
-Responsável por raspar conteúdo focado em angariar cliques fáceis, usando apelo à urgência, FOMO (Fear Of Missing Out) ou pânico.
+- `scraper_tech_news.py` extrai título, URL, data quando disponível e corpo de artigos do Manual do Usuário e G1.
+- `scraper_fake_news.py` extrai título, URL, categoria, o texto do boato (quando presente) e os parágrafos de desmentido do Boatos.org.
 
-* **Fluxo de Scraping:**
-    1. Acessa páginas de listagem de sites conhecidos por clickbait técnico, portais de hype financeiro (cripto) ou tabloides de tecnologia.
-    2. Extrai título, URL de destino e data de publicação.
-    3. Entra em cada link coletado para extrair o texto completo, focando na linguagem utilizada.
-* **Parâmetros de Linha de Comando:**
-    * `--pages` (default: 5): Quantidade de páginas de listagem a percorrer.
-    * `--delay` (default: 1.0): Tempo de espera (em segundos) entre requisições.
+Como os seletores HTML dependem dos sites externos, as coletas podem deixar de funcionar quando suas páginas forem alteradas. Os resultados também não recebem rótulo automaticamente nem são integrados ao dataset final por enquanto.
 
----
+## Sequência recomendada
 
-### 3. Sanitização e Extração de Sinais de Hype (`feature_engineering.py`)
+```bash
+# Dados reais para o classificador de hype
+python src/build_sensacionalismo_dataset.py
 
-Substituindo a dependência de datasets acadêmicos prontos, este script processa o texto raspado para extrair ativamente sinais de sensacionalismo para o modelo.
+# Dados demonstrativos, se for necessário completar a segunda fonte do merge
+python src/generate_sample_dataset.py
 
-* **Limpeza de Ruído (Sanitização):** Remove tags HTML residuais, links de patrocinadores, botões de redes sociais e rodapés, isolando o corpo textual da notícia.
-* **Criação de Atributos (Feature Engineering):** Varre o texto limpo em busca de padrões estruturais de linguagem hiperbólica.
-* **Saída:** Une os dados sóbrios e os de hype gerando a tabela final `data/dataset_hype_treino.csv`.
+# Consolidação e splits
+python src/merge_datasets.py
 
-#### Campos Principais do CSV Gerado:
-* `id`: Identificador único.
-* `label`: Classificação do texto (`sobrio` ou `hype`).
-* `text`: Texto limpo e higienizado da notícia.
-* `uppercase_words_percentage`: Densidade de palavras escritas totalmente em CAIXA ALTA.
-* `exclamation_density`: Contagem e frequência de pontuação extrema (ex: `!!!`, `?!`).
-* `extreme_adjectives_count`: Contagem da ocorrência de léxico de alarme (ex: "revolucionário", "urgente", "assustador", "fim", "milagroso").
+# Avaliação dos baselines
+python src/train_baseline.py
+```
 
----
+Para preparar o dataset de alegações, execute separadamente:
 
-## Boas Práticas e Política de Polidez (Politeness Policy)
-
-Para garantir o bom comportamento dos scrapers e evitar sobrecarga nos servidores das fontes:
-1. **User Agent Real:** Todos os scrapers enviam um cabeçalho `User-Agent` simulando um navegador moderno para passar em firewalls básicos.
-2. **Tempo de Atraso (Delays):** Por padrão, há uma pausa de pelo menos 1.0 segundo entre cada requisição GET de artigo para respeitar os servidores.
-3. **Tratamento de Erros:** Exceções de conexão e códigos HTTP de erro (diferentes de 200) são tratados para que uma falha em uma página não interrompa todo o processo de coleta.
+```bash
+python src/build_claims_dataset.py
+```

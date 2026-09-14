@@ -2,88 +2,67 @@
 title: Arquitetura da Extensão Web
 ---
 
-Este documento detalha o fluxo de interação, a stack tecnológica e a organização técnica da extensão de navegador do projeto **Inimigos do Prompt**.
+Esta página descreve a implementação atual da PoC, não a arquitetura planejada.
 
----
-
-## Visão Geral e Fluxo de Uso
-
-A extensão atua integrada ao webmail do usuário (ex.: Gmail, Outlook), analisando newsletters de tecnologia diretamente na aba de leitura para mitigar o consumo de desinformação e sensacionalismo técnico.
+## Fluxo implementado
 
 ```mermaid
 sequenceDiagram
-    autonumber
-    actor User as Usuário (Webmail)
-    participant CS as Content Script (DOM)
-    participant BG as Background Worker
-    participant API as API de Inferência (FastAPI)
-    participant SP as Side Panel (React UI)
+    actor User as Usuário
+    participant CS as Content Script
+    participant SW as Service Worker
+    participant API as FastAPI
 
-    User->>CS: Abre e-mail da newsletter (ex: Techdrop)
-    CS->>CS: Identifica remetente e extrai corpo limpo da mensagem
-    CS->>BG: Envia payload de texto extraído
-    BG->>API: POST /api/v1/analyze (Texto limpo)
-    API-->>BG: Retorna scores, segmentos e pesos de explicabilidade (SHAP/LIME)
-    BG->>CS: Repassa termos para destaque visual
-    CS->>User: Aplica grifos interativos no corpo do e-mail
-    BG->>SP: Atualiza métricas e relatório detalhado de pautas
-    User->>SP: Consulta score geral de sensacionalismo e explicações
+    User->>CS: Abre uma mensagem no Gmail ou Outlook Live
+    CS->>CS: Extrai assunto e texto limpo do DOM
+    CS->>SW: ANALYZE_EMAIL
+    SW->>SW: Consulta chrome.storage.local
+    SW->>API: POST /api/v1/analyze (se não houver cache)
+    API-->>SW: Score, termos e claims heurísticos
+    SW-->>CS: ANALYSIS_RESULT
+    CS->>CS: Destaca termos no corpo da mensagem
 ```
 
----
+O content script usa os seletores `.a3s.aiL` no Gmail e `.x_WordSection1` ou `[aria-label="Corpo da mensagem"]` no Outlook. A extração remove scripts, estilos, iframes, `footer` e alguns seletores de descadastro. A API faz uma segunda limpeza de HTML e URLs.
 
-## Stack Tecnológica
+## Componentes existentes
 
-| Camada | Tecnologia | Justificativa Técnica |
-| :--- | :--- | :--- |
-| **Padrão** | Manifest V3 | Padrão mandatório dos navegadores modernos (Chromium / Firefox), garantindo segurança e conformidade de publicação. |
-| **Linguagem** | TypeScript | Tipagem estrita para manipulação segura de seletores do DOM, mensagens internas (`chrome.runtime`) e contratos de payload da API. |
-| **Build & Tooling** | Vite + `@crxjs/vite-plugin` | Proporciona suporte a *Hot Module Replacement* (HMR) em ambiente de extensão, acelerando o ciclo de desenvolvimento da UI. |
-| **UI Framework** | React 18+ | Renderização reativa do painel lateral e injeções pontuais no DOM via Shadow Root. |
-| **Estilização** | Tailwind CSS + Shadow DOM | Isolamento estrito de escopo de estilos para evitar que as classes da extensão interfiram no CSS do webmail e vice-versa. |
-| **Componentes** | Radix UI / shadcn/ui + Lucide Icons | Componentes acessíveis, leves e modulares para badges, tooltips de explicabilidade e cartões de pauta. |
-| **Estado Local** | Zustand | Gerenciamento de estado leve para sincronizar dados de inferência entre o Content Script e o Side Panel. |
+| Camada | Implementação atual |
+| --- | --- |
+| Manifesto | Chrome Manifest V3 com `sidePanel`, `storage` e `activeTab`. |
+| Content script | `src/content/`: extrai a mensagem, solicita a análise e injeta `<mark>` no HTML da mensagem. |
+| Service worker | `src/background/service-worker.ts`: faz cache local e chama `http://localhost:8000/api/v1/analyze`. |
+| Interface | React 19, TypeScript, Vite, Tailwind e Lucide. Há um side panel (`index.html`) e um dashboard (`dashboard.html`). |
+| API | FastAPI com cache em memória e classificador sklearn quando há artefatos; caso contrário, heurísticas. |
 
----
+Não há Zustand, Radix/shadcn, DOMPurify, SHAP nem LIME no código atual. A explicabilidade é feita por léxico: palavras alarmistas, texto em caixa alta e alguns padrões de clickbait.
 
-## Componentes da Extensão
+## Estado do painel e do dashboard
 
-### 1. Content Script
-* **Detecção Contextual:** Identifica remetentes cadastrados ou estruturas típicas de newsletters no DOM da página aberta.
-* **Sanitização e Extração:** Isola o nó principal do corpo do e-mail, removendo pixels de rastreamento, links de descadastramento e anúncios periféricos via `DOMPurify` e seletores CSS dedicados.
-* **Destaque no Texto (In-line Highlights):** Injeta marcações interativas (`<mark>`) nos trechos pontuados pela explicabilidade do modelo, exibindo tooltips ao passar o cursor sobre termos hiperbólicos.
+O resultado da análise real retorna ao content script para aplicar os grifos. O service worker não transmite esse resultado ao side panel nem o grava como `current_analysis`. Por isso, o side panel pode permanecer sem dados e o dashboard só recebe dados quando se usa a ação **Simular Análise (POC)**, que grava uma resposta fictícia no storage.
 
-### 2. Background Service Worker
-* Atua como intermediário assíncrono entre os scripts injetados no DOM e os serviços externos.
-* Dispara requisições HTTP seguras para a API de inferência do backend.
-* Gerencia o armazenamento em cache local (`chrome.storage.local`) de newsletters já processadas para evitar requisições redundantes.
+O botão da extensão abre o side panel por aba. O dashboard é aberto pelo botão da interface React e permite exportar o JSON carregado.
 
-### 3. Side Panel UI
-* Interface nativa ancorada via **Chrome Side Panel API** (`chrome.sidePanel`), permitindo leitura simultânea do e-mail e do relatório analítico.
-* Exibe o **Score Geral de Sensacionalismo/Hype** da edição e a segmentação de cada pauta tratada no e-mail.
+## Limitações conhecidas
 
----
+- A flag `hasAnalyzed` evita reanalisar a mesma página, mas pode impedir nova análise ao trocar de mensagem sem que o corpo desapareça do DOM.
+- O highlighter substitui `innerHTML`; isso é adequado apenas à PoC e pode afetar elementos ou listeners do webmail.
+- As permissões e os seletores estão limitados a Gmail e Outlook Live; Outlook corporativo não está no manifesto atual.
+- A URL da API é fixa em `localhost`, portanto não há configuração de ambiente nem serviço remoto.
 
-## Estrutura de Diretórios Recomendada
+## Estrutura efetiva
 
 ```text
 extension/
 ├── manifest.json
-├── package.json
-├── vite.config.ts
 ├── src/
-│   ├── background/
-│   │   └── service-worker.ts       # Gestão de eventos, API e cache local
-│   ├── content/
-│   │   ├── extractor.ts            # Limpeza e extração de texto do e-mail
-│   │   ├── highlighter.ts          # Injeção de grifos e tooltips no DOM
-│   │   └── index.ts                # Ponto de entrada do Content Script
-│   ├── sidepanel/
-│   │   ├── components/             # Componentes React (Cards, Badges, Metrics)
-│   │   ├── App.tsx                 # View principal do Side Panel
-│   │   └── index.tsx               # Montagem do React no painel lateral
-│   ├── services/
-│   │   └── api.ts                  # Cliente de comunicação com o backend
-│   └── styles/
-│       └── globals.css             # Configurações do Tailwind CSS
+│   ├── background/service-worker.ts
+│   ├── content/{extractor,highlighter,index}.ts
+│   ├── dashboard/{Dashboard,main}.tsx
+│   ├── services/api.ts
+│   ├── types/index.ts
+│   ├── App.tsx
+│   └── main.tsx
+├── index.html
+└── dashboard.html
 ```

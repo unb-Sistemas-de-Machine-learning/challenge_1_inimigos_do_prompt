@@ -37,11 +37,14 @@ Nossa missão é combater o sensacionalismo e a desinformação no consumo de no
     * **CSAT (Satisfação e Credibilidade):** Nota média de satisfação $\ge 4.0/5.0$ em testes de uso contínuo.
 
 ### Objetivo de ML (Modelo e Avaliação)
-* **Predição:** Identificar e classificar o nível de sensacionalismo e exagero (*hype*) em textos jornalísticos/informativos.
-* **Métrica Principal:** **F-0.5 Score** (Priorizando a **Precisão**).
+* **Predição atual:** Identificar e classificar o nível de sensacionalismo e exagero (*hype*) em textos jornalísticos/informativos.
+* **Métrica atual do baseline:** **F-0.5 Score** (Priorizando a **Precisão**).
 * **Justificativa Técnica:**
     > [!IMPORTANT]
     > O erro mais prejudicial em moderação de conteúdo é o **Falso Positivo** (rotular incorretamente um artigo legítimo ou autor sério como sensacionalista). Ao focar no F-0.5 Score, aumentamos o peso da Precisão sobre a revocação (*recall*), minimizando esses alarmes falsos e fortalecendo a credibilidade das predições do sistema.
+
+> [!NOTE]
+> A inferência disponível é uma PoC: sem artefatos sklearn versionados, a API usa heurísticas de linguagem. O risco de desinformação ainda não é uma predição independente. Veja [Dados](../dados/) e [Backend API](../backend_api/) para as limitações atuais.
 
 ---
 
