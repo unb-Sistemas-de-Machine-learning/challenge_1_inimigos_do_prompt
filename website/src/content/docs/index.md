@@ -5,6 +5,8 @@ template: splash
 hero:
   title: Inimigos do Prompt
   tagline: Nossa missão é combater o sensacionalismo e a desinformação no consumo de notícias técnicas e newsletters de tecnologia por meio de IA aplicada.
+  image:
+    file: ../../assets/logo_inimigos.png
   actions:
     - text: Começar a ler
       link: /challenge_1_inimigos_do_prompt/planejamento/

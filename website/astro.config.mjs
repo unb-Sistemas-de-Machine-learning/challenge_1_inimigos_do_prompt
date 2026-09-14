@@ -8,6 +8,9 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'Inimigos do Prompt',
+			logo: {
+				src: './src/assets/logo_inimigos.png',
+			},
 			locales: {
 				root: { label: 'Português', lang: 'pt-BR' }
 			},
@@ -16,7 +19,6 @@ export default defineConfig({
 			],
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/unb-Sistemas-de-Machine-learning/challenge_1_inimigos_do_prompt' }],
 			sidebar: [
-				{ label: 'Início', link: '/challenge_1_inimigos_do_prompt/' },
 				{ label: 'Planejamento', slug: 'planejamento' },
 				{ label: 'Coleta de Dados', slug: 'dados' },
 				{ label: 'Arquitetura da Extensão', slug: 'arquitetura' },
