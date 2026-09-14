@@ -4,12 +4,12 @@ import { AnalyzeRequest } from '../types';
 
 let hasAnalyzed = false;
 
-function initAnalysis() {
-  if (hasAnalyzed) return;
+function initAnalysis(force: boolean = false) {
+  if (hasAnalyzed && !force) return;
 
   const content = extractEmailContent();
   
-  if (content && content.bodyText.length > 50) {
+  if (content && content.bodyText.length > 30) {
     hasAnalyzed = true;
     
     const payload: AnalyzeRequest = {
@@ -25,8 +25,20 @@ function initAnalysis() {
         }
       }
     });
+  } else if (force) {
+    chrome.runtime.sendMessage({
+      type: 'ERROR',
+      error: 'Não foi possível extrair o texto da mensagem. Certifique-se de estar com um e-mail aberto.'
+    });
   }
 }
+
+// Escuta comandos manuais disparados pelo Side Panel ou Service Worker
+chrome.runtime.onMessage.addListener((message: any) => {
+  if (message.type === 'TRIGGER_EXTRACTION') {
+    initAnalysis(true);
+  }
+});
 
 // Observa mudanças no DOM para capturar carregamento de e-mails dinâmicos (SPA)
 const observer = new MutationObserver(() => {
@@ -48,3 +60,4 @@ observer.observe(document.body, { childList: true, subtree: true });
 
 // Tenta iniciar caso a página já tenha carregado o e-mail
 initAnalysis();
+
