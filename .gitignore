@@ -18,6 +18,11 @@ data/
 *.csv
 *.zip
 
+# Logs e dados locais gerados
+*.log
+*.jsonl
+feedback_log.jsonl
+
 # Sistema Operacional & IDEs
 .DS_Store
 *.DS_Store

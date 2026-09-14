@@ -22,4 +22,9 @@ app.include_router(api_router, prefix=settings.api_v1_str)
 
 @app.get("/health", tags=["health"])
 async def health_check():
-    return {"status": "ok"}
+    from app.ml.model_loader import ml_loader
+    return {
+        "status": "healthy",
+        "model_loaded": ml_loader.model is not None,
+        "model_backend": settings.model_backend
+    }
