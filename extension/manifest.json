@@ -6,12 +6,15 @@
   "permissions": [
     "sidePanel",
     "storage",
-    "activeTab"
+    "activeTab",
+    "tabs"
   ],
   "host_permissions": [
     "http://localhost:8000/*",
+    "http://127.0.0.1:8000/*",
     "https://mail.google.com/*",
-    "https://outlook.live.com/*"
+    "https://outlook.live.com/*",
+    "https://outlook.office.com/*"
   ],
   "background": {
     "service_worker": "src/background/service-worker.ts",

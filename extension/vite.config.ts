@@ -16,6 +16,7 @@ export default defineConfig({
     },
   },
   build: {
+    emptyOutDir: true,
     rollupOptions: {
       input: {
         dashboard: 'dashboard.html',
