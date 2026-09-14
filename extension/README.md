@@ -26,13 +26,16 @@ pip install -r requirements-api.txt
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-O manifesto concede acesso apenas a Gmail, Outlook Live e ao host local da API. A análise disponível é heurística enquanto não existirem artefatos sklearn em `backend/app/ml/artifacts/`.
+O manifesto injeta o content script no Gmail e no Outlook Live. Ele também declara permissões para `localhost`, `127.0.0.1` e Outlook na web; a URL usada pela API permanece fixa em `http://localhost:8000`.
+
+A API carrega, por padrão, os artefatos sklearn versionados em `../backend/app/ml/artifacts/`. Se esses arquivos não estiverem disponíveis, o backend mantém um fallback heurístico.
 
 ## Limitações atuais
 
-- A resposta real é usada para destacar termos no webmail, mas ainda não abastece o side panel nem o dashboard.
-- O botão **Simular Análise (POC)** popula essas telas com dados fictícios.
-- Os controles de feedback e reporte são visuais e não chamam a rota de feedback da API.
+- A resposta real destaca termos no webmail, atualiza o side panel e é salva como `current_analysis` para o dashboard.
+- O painel consulta `GET /health`, pode solicitar uma nova extração na aba ativa e oferece exemplos de hype e texto sóbrio que chamam a API real.
+- A confirmação do slider envia `confidence_slider` e o dashboard envia `false_positive` para `POST /api/v1/feedback`.
 - A aplicação dos destaques substitui `innerHTML`, abordagem limitada à demonstração.
+- A análise automática ainda é iniciada uma única vez por ciclo de DOM; uma troca de mensagem sem remover o corpo pode não ser detectada.
 
 Veja a [documentação da extensão](../website/src/content/docs/extensao_frontend.md) e o [guia de execução integrada](../website/src/content/docs/execucao_poc_api.md) para detalhes.

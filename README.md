@@ -11,18 +11,18 @@ O repositório contém uma prova de conceito composta por pipeline de dados/ML, 
 ## Estado atual da PoC
 
 - A extensão Chrome observa Gmail e Outlook Live, extrai o texto visível da mensagem, consulta a API local e destaca termos retornados na própria página.
-- A API FastAPI produz score de sensacionalismo de 1 a 5, termos destacados e *claims* suspeitas. Sem artefatos em `backend/app/ml/artifacts/`, ela executa regras heurísticas — não há modelo treinado servido pela API.
-- Há um side panel e um dashboard para explorar uma análise simulada. A resposta real ainda não é sincronizada com essas duas telas.
-- O pipeline de dados prepara datasets e avalia baselines TF-IDF com Naive Bayes e Regressão Logística. Os dados, métricas e artefatos gerados localmente não são versionados.
+- A API FastAPI produz score de sensacionalismo de 1 a 5, termos destacados e *claims* suspeitas. Ela carrega os artefatos sklearn versionados em `backend/app/ml/artifacts/`; se eles não estiverem disponíveis no ambiente, usa o fallback heurístico.
+- A análise real é armazenada no cache da extensão, exibida no side panel e disponibilizada ao dashboard. O painel também verifica a saúde da API e oferece exemplos de integração que consultam o backend de verdade.
+- Os controles de confiança e de falso positivo enviam feedback para a API. O pipeline de dados prepara datasets e avalia baselines TF-IDF com Naive Bayes e Regressão Logística; os datasets e métricas locais continuam fora do versionamento.
 
-O campo `disinformation_risk` é derivado por heurísticas; não representa uma segunda predição de desinformação, nem a confiança é uma probabilidade calibrada.
+O campo `disinformation_risk` continua derivado por heurísticas; não representa uma segunda predição de desinformação. A confiança exibida também não é uma probabilidade calibrada.
 
 ## Componentes
 
 | Diretório | Finalidade |
 | --- | --- |
 | `src/` | Coleta, preparação de dados e treinamento/avaliação do baseline. |
-| `backend/` | API FastAPI, classificador, explicabilidade por léxico e cache em memória. |
+| `backend/` | API FastAPI, artefatos sklearn, explicabilidade por léxico, cache em memória e registro de feedback. |
 | `extension/` | Extensão Chrome Manifest V3, side panel e dashboard. |
 | `website/` | Documentação em Astro Starlight, publicada pelo GitHub Pages. |
 

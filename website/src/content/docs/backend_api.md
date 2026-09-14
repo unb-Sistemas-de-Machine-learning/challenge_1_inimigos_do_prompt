@@ -6,22 +6,24 @@ O backend é uma API FastAPI para a PoC de análise de newsletters. Ele recebe o
 
 ## Estado do modelo
 
-`ModelLoader` tenta carregar `backend/app/ml/artifacts/model.joblib` e `vectorizer.joblib`. Esses artefatos não estão versionados. Quando ausentes, o serviço usa um classificador heurístico com:
+`ModelLoader` carrega `backend/app/ml/artifacts/model.joblib` e `vectorizer.joblib`, artefatos sklearn versionados no repositório. Com eles disponíveis, o serviço vetorializa o texto, usa `predict_proba` e acrescenta um pequeno ajuste heurístico ao score.
+
+Se os artefatos estiverem ausentes ou não puderem ser carregados, o serviço usa o fallback heurístico com:
 
 - percentual de palavras em caixa alta;
 - densidade de exclamações;
 - ocorrências de um léxico de termos extremos, como “revolucionário”, “urgente” e “destruir”.
 
-Com artefatos sklearn válidos, o código aplica o vetorizador ao texto, usa `predict_proba` e adiciona um pequeno ajuste heurístico. A opção de configuração `MODEL_BACKEND=bertimbau` ainda não carrega nem executa BERTimbau; ela mantém o fallback.
+A opção de configuração `MODEL_BACKEND=bertimbau` ainda não carrega nem executa BERTimbau; ela mantém o fallback.
 
 ## Rotas
 
 ### `GET /health`
 
-Responde apenas se o processo está ativo:
+Responde o estado do processo, o backend configurado e se o modelo foi carregado:
 
 ```json
-{"status":"ok"}
+{"status":"healthy","model_loaded":true,"model_backend":"sklearn"}
 ```
 
 ### `POST /api/v1/analyze`
@@ -67,7 +69,7 @@ Recebe `false_positive` ou `confidence_slider` e registra uma linha JSON no arqu
 }
 ```
 
-O feedback não dispara retreinamento automático. A extensão atual também não chama essa rota: seus controles de feedback são somente visuais.
+O feedback não dispara retreinamento automático. A extensão chama essa rota: o side panel envia `confidence_slider`, e o dashboard envia `false_positive` ao reportar uma alegação. Os registros usam timestamp em UTC.
 
 ## Cache e limitações
 
