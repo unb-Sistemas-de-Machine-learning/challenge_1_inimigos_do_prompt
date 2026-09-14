@@ -47,7 +47,7 @@ docker compose up --build
 A API fica disponível em `http://localhost:8000`; a especificação OpenAPI está em `http://localhost:8000/api/v1/openapi.json`. O endpoint `GET /health` responde em `http://localhost:8000/health`.
 
 > [!IMPORTANT]
-> Sem `backend/app/ml/artifacts/model.joblib` e `vectorizer.joblib`, a API usa o classificador heurístico. O script `train_baseline.py` avalia modelos, mas ainda não exporta esses artefatos.
+> Os artefatos `backend/app/ml/artifacts/model.joblib` e `vectorizer.joblib` estão versionados e são carregados pelo backend padrão. Se não puderem ser carregados no ambiente, a API usa o classificador heurístico. O script `train_baseline.py` avalia os baselines, mas ainda não exporta novos artefatos automaticamente.
 
 ## 3. Extensão Chrome
 
@@ -57,7 +57,7 @@ npm install
 npm run build
 ```
 
-No Chrome, abra `chrome://extensions`, ative o modo de desenvolvedor e carregue a pasta `extension/dist`. A extensão possui permissões apenas para Gmail, Outlook Live e `http://localhost:8000`.
+No Chrome, abra `chrome://extensions`, ative o modo de desenvolvedor e carregue a pasta `extension/dist`. A análise automática é injetada no Gmail e Outlook Live; a extensão consulta a API em `http://localhost:8000`, exibe o estado de saúde e sincroniza a análise real com o dashboard.
 
 ## 4. Site de documentação
 

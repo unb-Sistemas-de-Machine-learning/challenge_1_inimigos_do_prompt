@@ -1,49 +1,18 @@
-# Starlight Starter Kit: Basics
+# Documentação — Inimigos do Prompt
 
-[![Built with Starlight](https://astro.badg.es/v2/built-with-starlight/tiny.svg)](https://starlight.astro.build)
+Site de documentação do projeto, construído com Astro e Starlight. O deploy no GitHub Pages é feito pelo workflow `.github/workflows/deploy.yml` quando há *push* em `main` ou `feature/extensao-ui-dashboard`.
 
-```
-npm create astro@latest -- --template starlight
-```
+## Desenvolvimento local
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
-
-## 🚀 Project Structure
-
-Inside of your Astro + Starlight project, you'll see the following folders and files:
-
-```
-.
-├── public/
-├── src/
-│   ├── assets/
-│   ├── content/
-│   │   └── docs/
-│   └── content.config.ts
-├── astro.config.mjs
-├── package.json
-└── tsconfig.json
+```bash
+npm install
+npm run dev
 ```
 
-Starlight looks for `.md` or `.mdx` files in the `src/content/docs/` directory. Each file is exposed as a route based on its file name.
+O Astro informa a URL local no terminal. Para gerar o site estático em `dist/`:
 
-Images can be added to `src/assets/` and embedded in Markdown with a relative link.
+```bash
+npm run build
+```
 
-Static assets, like favicons, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Check out [Starlight’s docs](https://starlight.astro.build/), read [the Astro documentation](https://docs.astro.build), or jump into the [Astro Discord server](https://astro.build/chat).
+As páginas vivem em `src/content/docs/`; a navegação é configurada em `astro.config.mjs`. O projeto usa a base `/challenge_1_inimigos_do_prompt` para compatibilidade com o GitHub Pages.
