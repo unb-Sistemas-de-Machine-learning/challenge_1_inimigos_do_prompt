@@ -11,11 +11,21 @@ O repositório contém uma prova de conceito composta por pipeline de dados/ML, 
 ## Estado atual da PoC
 
 - A extensão Chrome observa Gmail e Outlook Live, extrai o texto visível da mensagem, consulta a API local e destaca termos retornados na própria página.
-- A API FastAPI produz score de sensacionalismo de 1 a 5, termos destacados e *claims* suspeitas. Ela carrega os artefatos sklearn versionados em `backend/app/ml/artifacts/`; se eles não estiverem disponíveis no ambiente, usa o fallback heurístico.
+- A API FastAPI produz score de sensacionalismo de 1 a 5, termos destacados e *claims* suspeitas. Ela suporta baseline sklearn em `backend/app/ml/artifacts/` e integração com o modelo fine-tuned **BERTimbau** hospedado no Hugging Face ([gustant1/bertimbau-sensacionalismo](https://huggingface.co/gustant1/bertimbau-sensacionalismo)). Se os artefatos não estiverem disponíveis, utiliza o fallback heurístico.
 - A análise real é armazenada no cache da extensão, exibida no side panel e disponibilizada ao dashboard. O painel também verifica a saúde da API e oferece exemplos de integração que consultam o backend de verdade.
-- Os controles de confiança e de falso positivo enviam feedback para a API. O pipeline de dados prepara datasets e avalia baselines TF-IDF com Naive Bayes e Regressão Logística; os datasets e métricas locais continuam fora do versionamento.
+- Os controles de confiança e de falso positivo enviam feedback para a API. O pipeline de dados prepara datasets e avalia baselines TF-IDF com Naive Bayes e Regressão Logística, além do fine-tuning do BERTimbau (`neuralmind/bert-base-portuguese-cased`).
 
 O campo `disinformation_risk` continua derivado por heurísticas; não representa uma segunda predição de desinformação. A confiança exibida também não é uma probabilidade calibrada.
+
+## Modelo de Machine Learning (BERTimbau)
+
+O modelo principal para classificação de sensacionalismo/hype é o **BERTimbau Fine-Tuned**:
+- **Hospedagem:** Hugging Face Hub em [gustant1/bertimbau-sensacionalismo](https://huggingface.co/gustant1/bertimbau-sensacionalismo)
+- **Base:** `neuralmind/bert-base-portuguese-cased` ajustado finamente no dataset de newsletters de tecnologia.
+- **Como executar:**
+  1. Instale as dependências de deep learning no backend: `pip install transformers torch`
+  2. Configure a variável de ambiente no backend: `MODEL_BACKEND=bertimbau` (ou defina `MODEL_PATH=gustant1/bertimbau-sensacionalismo`)
+  3. Ao iniciar a API FastAPI, o backend baixará e carregará automaticamente os pesos do modelo diretamente do Hugging Face Hub (ou de um diretório local baixado).
 
 ## Componentes
 

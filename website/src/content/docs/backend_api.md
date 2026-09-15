@@ -6,15 +6,18 @@ O backend é uma API FastAPI para a PoC de análise de newsletters. Ele recebe o
 
 ## Estado do modelo
 
-`ModelLoader` carrega `backend/app/ml/artifacts/model.joblib` e `vectorizer.joblib`, artefatos sklearn versionados no repositório. Com eles disponíveis, o serviço vetorializa o texto, usa `predict_proba` e acrescenta um pequeno ajuste heurístico ao score.
+O `ModelLoader` suporta dois backends principais para a classificação de sensacionalismo:
 
-Se os artefatos estiverem ausentes ou não puderem ser carregados, o serviço usa o fallback heurístico com:
+1. **BERTimbau Fine-Tuned (Principal):**
+   * **Modelo:** `neuralmind/bert-base-portuguese-cased` ajustado finamente no dataset de newsletters tech.
+   * **Hospedagem:** Disponível publicamente no Hugging Face Hub em [gustant1/bertimbau-sensacionalismo](https://huggingface.co/gustant1/bertimbau-sensacionalismo).
+   * **Como rodar:** Ao configurar `MODEL_BACKEND=bertimbau` nas configurações/variáveis de ambiente, o backend utiliza a biblioteca `transformers` da Hugging Face para baixar e carregar os pesos diretamente do repositório remoto ou de uma pasta local baixada.
 
-- percentual de palavras em caixa alta;
-- densidade de exclamações;
-- ocorrências de um léxico de termos extremos, como “revolucionário”, “urgente” e “destruir”.
+2. **Scikit-Learn Baseline (Fallback Local):**
+   * Carrega os artefatos `model.joblib` e `vectorizer.joblib` versionados em `backend/app/ml/artifacts/`.
+   * Vetorializa o texto com TF-IDF, calcula a probabilidade via `predict_proba` e aplica um ajuste heurístico ao score.
 
-A opção de configuração `MODEL_BACKEND=bertimbau` ainda não carrega nem executa BERTimbau; ela mantém o fallback.
+Se os artefatos estiverem ausentes ou a biblioteca do BERTimbau não for encontrada, o serviço utiliza um fallback heurístico puramente baseado em regras (caixa alta, densidade de exclamações e léxico alarmista).
 
 ## Rotas
 

@@ -8,6 +8,7 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'Inimigos do Prompt',
+			favicon: '/favicon.png',
 			logo: {
 				src: './src/assets/logo_inimigos.png',
 			},
