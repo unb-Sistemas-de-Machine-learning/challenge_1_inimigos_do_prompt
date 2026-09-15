@@ -67,6 +67,6 @@ Use o console de service worker da página de extensões e o terminal da API par
 | Requisição API, CORS e cache local | Implementados para `localhost`. |
 | Grifos no texto | Implementados como alteração simplificada de `innerHTML`. |
 | Artefatos sklearn | Versionados em `backend/app/ml/artifacts/` e carregados pelo backend padrão. |
-| BERTimbau na API | Pendente: loader ainda usa fallback. |
+| BERTimbau no Hugging Face | Hospedado em `gustant1/bertimbau-sensacionalismo` e suportado via `MODEL_BACKEND=bertimbau`. |
 | Resultado real no side panel/dashboard | Implementado por broadcast e `chrome.storage.local`. |
 | IMAP, fila e produção | Planejamento; não existem nesta PoC. |
