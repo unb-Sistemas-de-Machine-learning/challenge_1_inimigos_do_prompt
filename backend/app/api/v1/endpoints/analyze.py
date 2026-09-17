@@ -32,7 +32,7 @@ async def analyze_text(payload: AnalyzeRequest):
     
     # 4. Explicabilidade
     highlighted_terms = generate_highlighted_terms(text)
-    suspicious_claims = extract_suspicious_claims(text, score)
+    suspicious_claims = extract_suspicious_claims(text, score, highlighted_terms)
     
     # Calcula risco de desinformação baseado no score e claims
     risk = (score / 5.0) * 100
