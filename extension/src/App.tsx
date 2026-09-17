@@ -1,18 +1,49 @@
 import { useState, useEffect } from 'react';
 import { AnalyzeResponse } from './types';
-import { ShieldAlert, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 function App() {
   const [data, setData] = useState<AnalyzeResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Slider State
   const [sliderValue, setSliderValue] = useState<number>(50);
   const [hasInteracted, setHasInteracted] = useState<boolean>(false);
   const [feedbackSent, setFeedbackSent] = useState<boolean>(false);
 
   useEffect(() => {
+    let timeoutId: any;
+
+    if (chrome.storage?.local) {
+      chrome.storage.local.get(['current_analysis', 'latest_analysis'], (res) => {
+        const saved = (res.current_analysis || res.latest_analysis) as AnalyzeResponse | undefined;
+        if (saved && typeof saved.sensationalism_score === 'number') {
+          // Evitar carregar mock data preso no storage
+          if (saved.sensationalism_score === 4.2 && saved.confidence === 0.95 && saved.disinformation_risk === 78) {
+            chrome.storage.local.remove(['current_analysis', 'latest_analysis']);
+            timeoutId = setTimeout(() => setLoading(false), 1500);
+          } else {
+            setData(saved);
+            setLoading(false);
+          }
+        } else {
+          timeoutId = setTimeout(() => setLoading(false), 1500);
+        }
+      });
+    } else {
+      timeoutId = setTimeout(() => setLoading(false), 1500);
+    }
+
+    // Pede ao content script para forçar análise se estivermos num email
+    if (chrome.tabs) {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]?.id) {
+          chrome.tabs.sendMessage(tabs[0].id, { type: 'REQUEST_ANALYSIS' }).catch(() => { });
+        }
+      });
+    }
+
     const listener = (msg: any) => {
       if (msg.type === 'ANALYZE_EMAIL') {
         setLoading(true);
@@ -20,6 +51,7 @@ function App() {
       } else if (msg.type === 'ANALYSIS_RESULT') {
         setData(msg.payload);
         setLoading(false);
+        setError(null);
       } else if (msg.type === 'ERROR') {
         setError(msg.error);
         setLoading(false);
@@ -28,52 +60,12 @@ function App() {
 
     chrome.runtime?.onMessage?.addListener(listener);
     return () => {
+      clearTimeout(timeoutId);
       chrome.runtime?.onMessage?.removeListener(listener);
     };
   }, []);
 
-  const simulateAnalysis = () => {
-    setLoading(true);
-    setTimeout(() => {
-      const mockData: AnalyzeResponse = {
-        sensationalism_score: 4.2,
-        label: 'Hype Elevado',
-        confidence: 0.95,
-        highlighted_terms: [
-          { term: 'Urgente', weight: 0.4, category: 'hype' },
-          { term: 'Revolucionário', weight: 0.9, category: 'hype' },
-          { term: 'Substituir 90%', weight: 0.85, category: 'clickbait' },
-          { term: 'Pânico', weight: 0.6, category: 'alarmist' }
-        ],
-        disclaimer: 'Os resultados são baseados em heurísticas.',
-        disinformation_risk: 78,
-        suspicious_claims: [
-          {
-            claim: 'A substituição de 90% dos programadores',
-            explanation: 'Hype exagerado, projeção não comprovada por fontes técnicas.',
-            severity: 'moderate'
-          },
-          {
-            claim: 'O uso de computação quântica para IA',
-            explanation: 'Conceito técnico são, não comercial.',
-            severity: 'moderate'
-          },
-          {
-            claim: 'O uso de computação quântica para IA',
-            explanation: 'Conceito técnico incorreto (quântico é experimental, não comercial).',
-            severity: 'high'
-          }
-        ]
-      };
-      setData(mockData);
-      setLoading(false);
-      
-      // Save for Dashboard
-      if (chrome.storage) {
-        chrome.storage.local.set({ current_analysis: mockData });
-      }
-    }, 1000);
-  };
+
 
   const getSliderStatus = (val: number) => {
     if (val < 20) return "Reduziu muito";
@@ -117,18 +109,14 @@ function App() {
 
   if (!data) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 text-gray-400 p-6 text-center space-y-6">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 text-gray-500 p-6 text-center space-y-6">
         <div className="space-y-4 flex flex-col items-center">
-          <ShieldAlert className="h-12 w-12 text-gray-300" />
-          <p>Abra um e-mail de newsletter no Gmail ou Outlook para visualizar a análise do Inimigos do Prompt.</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-2"></div>
+          <p className="font-semibold text-gray-700">Aguardando e-mail...</p>
+          <p className="text-sm">
+            Por favor, abra a extensão <strong>antes</strong> de entrar no e-mail no Gmail ou Outlook.
+          </p>
         </div>
-        
-        <button 
-          onClick={simulateAnalysis}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-md shadow-sm transition-colors w-full"
-        >
-          Simular Análise (POC)
-        </button>
       </div>
     );
   }
@@ -154,21 +142,36 @@ function App() {
           <h2 className="text-[13px] font-bold text-gray-800 mb-3">
             Análise de Sensacionalismo (Likert {data.sensationalism_score.toFixed(1)}/5)
           </h2>
-          
+
           {/* Gauge Graphic */}
           <div className="flex justify-center mb-4 relative h-24">
             <svg viewBox="0 0 200 100" className="w-48 h-24 overflow-visible">
               <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#e5e7eb" strokeWidth="24" strokeLinecap="round" />
-              <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gauge-gradient)" strokeWidth="24" strokeLinecap="round" strokeDasharray="251.2" strokeDashoffset={251.2 * (1 - (data.sensationalism_score / 5))} className="transition-all duration-1000 ease-out" />
+              <path
+                d="M 20 100 A 80 80 0 0 1 180 100"
+                fill="none"
+                stroke="url(#gauge-gradient)"
+                strokeWidth="24"
+                strokeLinecap="round"
+                strokeDasharray="251.2"
+                strokeDashoffset={251.2 * (1 - ((data.sensationalism_score - 1) / 4))}
+                className="transition-all duration-1000 ease-out"
+              />
               <defs>
                 <linearGradient id="gauge-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#ef4444" />
-                  <stop offset="50%" stopColor="#f97316" />
-                  <stop offset="100%" stopColor="#facc15" />
+                  <stop offset="0%" stopColor="#22c55e" />
+                  <stop offset="50%" stopColor="#facc15" />
+                  <stop offset="100%" stopColor="#ef4444" />
                 </linearGradient>
               </defs>
               {/* Needle */}
-              <g transform={`rotate(${180 * (data.sensationalism_score / 5)} 100 100)`} className="transition-transform duration-1000 ease-out origin-[100px_100px]">
+              <g
+                style={{
+                  transform: `rotate(${-90 + ((data.sensationalism_score - 1) / 4) * 180}deg)`,
+                  transformOrigin: '100px 100px'
+                }}
+                className="transition-transform duration-1000 ease-out"
+              >
                 <polygon points="97,100 103,100 100,20" fill="#4b5563" />
                 <circle cx="100" cy="100" r="5" fill="#4b5563" />
               </g>
@@ -177,9 +180,9 @@ function App() {
 
           <div className="space-y-3 mt-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-[13px] font-bold text-gray-800">Por que alto?</h3>
+              <h3 className="text-[13px] font-bold text-gray-800">Por que essa pontuação?</h3>
             </div>
-            
+
             <div className="bg-gray-50 border border-gray-100 rounded-md p-2">
               <h4 className="text-[11px] font-semibold text-gray-600 mb-2 uppercase tracking-wider">
                 Termos com Maior Peso no Score
@@ -187,14 +190,14 @@ function App() {
               <p className="text-[10px] text-gray-400 mb-2 leading-tight">
                 Termos extraídos pelo pipeline que elevaram o índice de sensacionalismo.
               </p>
-              
+
               <div className="space-y-2">
                 {sortedTerms.map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between gap-2">
                     <span className="text-[12px] font-medium text-gray-700 truncate w-1/2">"{item.term}"</span>
                     <div className="flex-1 bg-gray-200 rounded-full h-1.5 overflow-hidden flex items-center">
-                      <div 
-                        className={`h-full rounded-full ${item.weight > 0.8 ? 'bg-red-500' : (item.weight > 0.5 ? 'bg-orange-400' : 'bg-yellow-400')}`} 
+                      <div
+                        className={`h-full rounded-full ${item.weight > 0.8 ? 'bg-red-500' : (item.weight > 0.5 ? 'bg-orange-400' : 'bg-yellow-400')}`}
                         style={{ width: `${item.weight * 100}%` }}
                       ></div>
                     </div>
@@ -212,18 +215,19 @@ function App() {
                 {getSliderStatus(sliderValue)}
               </span>
             </div>
-            
+
             <div className="px-2">
-              <input 
-                type="range" 
-                min="0" max="100" 
+              <input
+                type="range"
+                min="0" max="100"
                 value={sliderValue}
+                disabled={feedbackSent}
                 onChange={(e) => {
                   setSliderValue(Number(e.target.value));
                   setHasInteracted(true);
                   setFeedbackSent(false);
                 }}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                className={`w-full h-2 bg-gray-200 rounded-lg appearance-none accent-blue-600 ${feedbackSent ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
               />
               <div className="flex justify-between text-[10px] text-gray-500 mt-1 font-medium">
                 <span>Reduziu muito</span>
@@ -238,14 +242,13 @@ function App() {
                 <span className="text-[11px] font-bold">Feedback Enviado!</span>
               </div>
             ) : (
-              <button 
+              <button
                 onClick={submitFeedback}
                 disabled={!hasInteracted}
-                className={`w-full mt-2 py-1.5 rounded-md text-[11px] font-bold transition-colors ${
-                  hasInteracted 
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm' 
-                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                }`}
+                className={`w-full mt-2 py-1.5 rounded-md text-[11px] font-bold transition-colors ${hasInteracted
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  }`}
               >
                 Confirmar Avaliação
               </button>
@@ -256,11 +259,11 @@ function App() {
         {/* Disinformation Card */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <h2 className="text-[13px] font-bold text-gray-800 mb-3">
-            Análise de Desinformação/Claims ({data.disinformation_risk}% Risco):
+            Análise de Desinformação ({data.disinformation_risk}% Risco):
           </h2>
-          
+
           <h3 className="text-[12px] font-bold text-gray-800 mb-2">Alegações Suspeitas:</h3>
-          
+
           <ul className="list-disc pl-5 text-[12px] text-gray-800 space-y-3">
             {data.suspicious_claims.map((claim, idx) => (
               <li key={idx} className="leading-snug">
@@ -276,7 +279,7 @@ function App() {
           </ul>
 
           <div className="mt-4">
-            <button 
+            <button
               onClick={openDashboard}
               className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 text-[11px] font-bold py-2 px-3 rounded transition-colors border border-gray-200 shadow-sm"
             >
