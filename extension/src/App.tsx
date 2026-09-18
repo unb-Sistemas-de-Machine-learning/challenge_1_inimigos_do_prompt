@@ -1,15 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AnalyzeResponse } from './types';
-import { analyzeText, sendFeedback, checkHealth } from './services/api';
+import { sendFeedback, checkHealth } from './services/api';
 import { 
-  ShieldAlert, 
   AlertTriangle, 
   CheckCircle2, 
   RefreshCw, 
-  FileText, 
   Send, 
   ExternalLink, 
-  Sparkles,
   Loader2
 } from 'lucide-react';
 
@@ -71,69 +68,24 @@ function App() {
     };
 
     chrome.runtime?.onMessage?.addListener(listener);
+
+    // Auto-trigger analysis when opening the popup
+    if (chrome.tabs) {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]?.id) {
+          chrome.tabs.sendMessage(tabs[0].id, { type: 'TRIGGER_EXTRACTION' }).catch(() => {});
+        }
+      });
+    }
+
     return () => {
       chrome.runtime?.onMessage?.removeListener(listener);
     };
   }, [verifyHealth]);
 
-  // Dispara extração e análise do e-mail aberto na aba ativa
-  const handleAnalyzeActiveTab = () => {
-    setLoading(true);
-    setError(null);
 
-    if (chrome.tabs && chrome.tabs.query) {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (tabs && tabs[0]?.id) {
-          chrome.tabs.sendMessage(tabs[0].id, { type: 'TRIGGER_EXTRACTION' }, () => {
-            if (chrome.runtime.lastError) {
-              setError('Abra uma aba com webmail (Gmail ou Outlook) para analisar o e-mail aberto.');
-              setLoading(false);
-            }
-          });
-        } else {
-          setError('Nenhuma aba ativa identificada.');
-          setLoading(false);
-        }
-      });
-    } else {
-      setError('Ambiente de extensão não disponível.');
-      setLoading(false);
-    }
-  };
 
-  // Testa diretamente contra o backend FastAPI com payload real
-  const handleDemoAnalysis = async (type: 'hype' | 'sobrio') => {
-    setLoading(true);
-    setError(null);
 
-    const demoPayloads = {
-      hype: {
-        email_id: `demo-hype-${Date.now()}`,
-        subject: 'URGENTE: Nova Inteligência Artificial vai substituir 90% dos programadores!',
-        raw_text: 'ATENÇÃO URGENTE! Pesquisadores anunciam que uma nova Inteligência Artificial com computação quântica vai substituir 90% dos programadores em ritmo assustador e gerar pânico no mercado global de tecnologia. O colapso dos empregos de programação é inevitável e revolucionário!'
-      },
-      sobrio: {
-        email_id: `demo-sobrio-${Date.now()}`,
-        subject: 'Consórcio de tecnologia define novos padrões para infraestrutura de telecomunicações',
-        raw_text: 'O consórcio internacional de telecomunicações anunciou hoje a publicação das diretrizes de arquitetura para implementação de redes corporativas. Os testes operacionais iniciam no próximo trimestre com foco em sustentabilidade e redução de consumo de energia.'
-      }
-    };
-
-    try {
-      const payload = demoPayloads[type];
-      const result = await analyzeText(payload);
-      setData(result);
-      
-      // Salva no storage local
-      if (chrome.storage?.local) {
-        chrome.storage.local.set({ current_analysis: result });
-      }
-    } catch (err: any) {
-      setError(err.message || 'Falha ao consultar a API de análise.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getSliderStatus = (val: number) => {
     if (val < 20) return "Reduziu muito";
@@ -257,49 +209,13 @@ function App() {
 
       {/* Empty State / Welcome Screen */}
       {!data && !loading && (
-        <div className="flex-1 flex flex-col items-center justify-center p-5 text-center space-y-5">
-          <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center border border-indigo-100 shadow-sm">
-            <ShieldAlert className="h-9 w-9 text-indigo-600" />
-          </div>
-
-          <div className="space-y-1.5 max-w-xs">
-            <h2 className="text-sm font-bold text-gray-800">Detector de Sensacionalismo</h2>
-            <p className="text-xs text-gray-500 leading-relaxed">
-              Abra um e-mail no <strong>Gmail</strong> ou <strong>Outlook</strong> para que a extensão avalie o texto automaticamente, ou teste agora mesmo com o backend:
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-6">
+          <div className="space-y-4 flex flex-col items-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-2"></div>
+            <p className="font-semibold text-gray-700">Aguardando e-mail...</p>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              Por favor, abra a extensão <strong>antes</strong> de entrar no e-mail no Gmail ou Outlook.
             </p>
-          </div>
-
-          <div className="w-full space-y-2 pt-2">
-            <button 
-              onClick={handleAnalyzeActiveTab}
-              className="w-full py-2.5 px-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center justify-center gap-2"
-            >
-              <FileText className="w-4 h-4" />
-              <span>Analisar E-mail da Aba Aberta</span>
-            </button>
-
-            <div className="pt-2 border-t border-gray-200 text-left">
-              <span className="text-[10px] uppercase font-bold text-gray-400 block mb-2 tracking-wider">
-                Testes Rápidos de Integração (API Real):
-              </span>
-              <div className="grid grid-cols-2 gap-2">
-                <button 
-                  onClick={() => handleDemoAnalysis('hype')}
-                  className="py-2 px-2.5 bg-white hover:bg-rose-50 border border-gray-200 hover:border-rose-300 text-rose-700 text-[11px] font-bold rounded-lg shadow-xs transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-rose-500" />
-                  <span>Exemplo Hype</span>
-                </button>
-
-                <button 
-                  onClick={() => handleDemoAnalysis('sobrio')}
-                  className="py-2 px-2.5 bg-white hover:bg-emerald-50 border border-gray-200 hover:border-emerald-300 text-emerald-700 text-[11px] font-bold rounded-lg shadow-xs transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Exemplo Sóbrio</span>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}
@@ -347,7 +263,7 @@ function App() {
                   strokeWidth="24" 
                   strokeLinecap="round" 
                   strokeDasharray="251.2" 
-                  strokeDashoffset={251.2 * (1 - (data.sensationalism_score / 5))} 
+                  strokeDashoffset={251.2 * (1 - ((data.sensationalism_score - 1) / 4))} 
                   className="transition-all duration-1000 ease-out" 
                 />
                 <defs>
@@ -358,7 +274,13 @@ function App() {
                   </linearGradient>
                 </defs>
                 {/* Needle */}
-                <g transform={`rotate(${180 * (data.sensationalism_score / 5)} 100 100)`} className="transition-transform duration-1000 ease-out origin-[100px_100px]">
+                <g 
+                  style={{ 
+                    transform: `rotate(${-90 + ((data.sensationalism_score - 1) / 4) * 180}deg)`, 
+                    transformOrigin: '100px 100px' 
+                  }} 
+                  className="transition-transform duration-1000 ease-out"
+                >
                   <polygon points="97,100 103,100 100,20" fill="#374151" />
                   <circle cx="100" cy="100" r="5" fill="#374151" />
                 </g>
@@ -428,13 +350,14 @@ function App() {
                   type="range" 
                   min="0" max="100" 
                   value={sliderValue}
+                  disabled={feedbackSent || feedbackSending}
                   onChange={(e) => {
                     setSliderValue(Number(e.target.value));
                     setHasInteracted(true);
                     setFeedbackSent(false);
                     setFeedbackError(null);
                   }}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                  className={`w-full h-2 bg-gray-200 rounded-lg appearance-none accent-indigo-600 ${(feedbackSent || feedbackSending) ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                 />
                 <div className="flex justify-between text-[10px] text-gray-500 mt-1 font-medium">
                   <span>Reduziu muito</span>
