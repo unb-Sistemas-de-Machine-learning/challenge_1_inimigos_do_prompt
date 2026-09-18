@@ -1,6 +1,6 @@
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter
 
 from app.schemas.feedback import FeedbackRequest
@@ -13,7 +13,7 @@ FEEDBACK_LOG_FILE = os.path.join(os.path.dirname(__file__), "../../../../feedbac
 @router.post("/feedback", status_code=201)
 async def submit_feedback(payload: FeedbackRequest):
     record = {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "email_id": payload.email_id,
         "feedback_type": payload.feedback_type,
         "claim_index": payload.claim_index,
