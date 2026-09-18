@@ -59,9 +59,10 @@ def generate_highlighted_terms(text: str) -> List[HighlightedTerm]:
     
     return sorted_terms[:8]
 
-def extract_suspicious_claims(text: str, score: float) -> List[SuspiciousClaim]:
+def extract_suspicious_claims(text: str, score: float, highlighted_terms: List[HighlightedTerm] = None) -> List[SuspiciousClaim]:
     """
     Segmenta o texto e extrai sentenças que configuram claims suspeitas.
+    Agora prioriza frases onde os termos com maior peso foram encontrados.
     """
     claims = []
     
@@ -71,7 +72,27 @@ def extract_suspicious_claims(text: str, score: float) -> List[SuspiciousClaim]:
         # Fallback simples caso nltk falhe
         sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
 
+    added_sentences = set()
+
+    if highlighted_terms:
+        for term_obj in highlighted_terms:
+            term_lower = term_obj.term.lower()
+            for sent in sentences:
+                sent_lower = sent.lower()
+                if term_lower in sent_lower and sent not in added_sentences:
+                    severity = "high" if term_obj.weight >= 0.6 else "moderate"
+                    explanation = f"Contém o termo problemático: '{term_obj.term}' (Categoria: {term_obj.category})"
+                    claims.append(SuspiciousClaim(
+                        claim=sent[:150] + ("..." if len(sent) > 150 else ""),
+                        explanation=explanation,
+                        severity=severity
+                    ))
+                    added_sentences.add(sent)
+                    break
+
     for sent in sentences:
+        if sent in added_sentences:
+            continue
         sent_lower = sent.lower()
         
         # Heurística 1: Percentuais extremos + promessas/ameaças
@@ -81,6 +102,7 @@ def extract_suspicious_claims(text: str, score: float) -> List[SuspiciousClaim]:
                 explanation="Hype exagerado, uso de percentuais absolutos sem contexto verificado.",
                 severity="moderate"
             ))
+            added_sentences.add(sent)
             continue
             
         # Heurística 2: Afirmações não científicas sobre IA/Quântica
@@ -90,6 +112,7 @@ def extract_suspicious_claims(text: str, score: float) -> List[SuspiciousClaim]:
                 explanation="Possível desinformação conceitual. Atribuição de capacidades comerciais não comprovadas a tecnologias experimentais.",
                 severity="high"
             ))
+            added_sentences.add(sent)
             continue
             
         # Heurística 3: Adjetivos extremos acumulados
@@ -100,6 +123,7 @@ def extract_suspicious_claims(text: str, score: float) -> List[SuspiciousClaim]:
                 explanation="Excesso de gatilhos emocionais e linguagem alarmista.",
                 severity="moderate"
             ))
+            added_sentences.add(sent)
 
     # Limita a 5 claims
     return claims[:5]
