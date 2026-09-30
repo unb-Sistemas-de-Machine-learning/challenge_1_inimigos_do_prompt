@@ -9,7 +9,7 @@ class HighlightedTerm(BaseModel):
 class SuspiciousClaim(BaseModel):
     claim: str
     explanation: str
-    severity: Literal['moderate', 'high']
+    severity: Literal['low', 'moderate', 'medium', 'high']
 
 class AnalyzeRequest(BaseModel):
     email_id: Optional[str] = None
