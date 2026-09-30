@@ -7,7 +7,8 @@ import {
   RefreshCw, 
   Send, 
   ExternalLink, 
-  Loader2
+  Loader2,
+  ServerCrash
 } from 'lucide-react';
 
 function App() {
@@ -40,10 +41,8 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // 1. Verifica conexão com o backend FastAPI
     verifyHealth();
 
-    // 2. Carrega última análise do cache local se disponível
     if (chrome.storage?.local) {
       chrome.storage.local.get(['current_analysis'], (result) => {
         if (result.current_analysis) {
@@ -52,7 +51,6 @@ function App() {
       });
     }
 
-    // 3. Ouve mensagens em tempo real do Content Script e do Background Worker
     const listener = (msg: any) => {
       if (msg.type === 'ANALYZE_START' || msg.type === 'ANALYZE_EMAIL') {
         setLoading(true);
@@ -69,7 +67,14 @@ function App() {
 
     chrome.runtime?.onMessage?.addListener(listener);
 
-    // Auto-trigger analysis when opening the popup
+    triggerExtraction();
+
+    return () => {
+      chrome.runtime?.onMessage?.removeListener(listener);
+    };
+  }, [verifyHealth]);
+
+  const triggerExtraction = () => {
     if (chrome.tabs) {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs[0]?.id) {
@@ -77,15 +82,7 @@ function App() {
         }
       });
     }
-
-    return () => {
-      chrome.runtime?.onMessage?.removeListener(listener);
-    };
-  }, [verifyHealth]);
-
-
-
-
+  };
 
   const getSliderStatus = (val: number) => {
     if (val < 20) return "Reduziu muito";
@@ -95,7 +92,6 @@ function App() {
     return "Aumentou muito";
   };
 
-  // Envio de feedback real para POST /api/v1/feedback
   const submitFeedback = async () => {
     if (!data || !hasInteracted) return;
 
@@ -126,6 +122,7 @@ function App() {
     if (chrome.storage?.local) {
       chrome.storage.local.remove(['current_analysis']);
     }
+    triggerExtraction(); // Tenta puxar um novo texto automaticamente
   };
 
   const openDashboard = () => {
@@ -147,7 +144,6 @@ function App() {
           <p className="text-[10px] text-gray-500 font-medium">Relatório de IA & Hype Tech</p>
         </div>
 
-        {/* Backend Status Indicator */}
         <div className="flex items-center gap-1.5 bg-white/70 px-2 py-1 rounded-full border border-gray-300 text-[10px] font-semibold">
           <span 
             className={`w-2 h-2 rounded-full ${
@@ -171,56 +167,82 @@ function App() {
         </div>
       </header>
 
-      {/* Backend Offline Warning Banner */}
       {backendStatus === 'offline' && (
         <div className="bg-amber-50 border-b border-amber-200 px-3 py-2 text-[11px] text-amber-800 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <span className="font-bold">Backend FastAPI desconectado.</span> Inicie o servidor localmente com <code className="bg-amber-100 px-1 py-0.5 rounded text-[10px] font-mono">uvicorn app.main:app --port 8000</code>.
+            <span className="font-bold">Backend FastAPI desconectado.</span> O modelo ML não está respondendo. Verifique o terminal do servidor.
           </div>
         </div>
       )}
 
-      {/* Loading State */}
+      {/* REQ-03: Skeleton Loading State */}
       {loading && (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-3">
-          <Loader2 className="h-9 w-9 text-indigo-600 animate-spin" />
-          <p className="font-bold text-sm text-gray-700">Analisando conteúdo da newsletter...</p>
-          <p className="text-xs text-gray-400">Consultando o modelo de Machine Learning e extraindo termos suspeitos</p>
+        <div className="p-3 space-y-3 flex-1 overflow-y-auto animate-pulse">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Loader2 className="h-4 w-4 text-indigo-500 animate-spin" />
+            <span className="text-xs font-bold text-indigo-600">IA Analisando Texto...</span>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-4">
+            <div className="flex justify-between items-center">
+              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-4 bg-gray-200 rounded-full w-16"></div>
+            </div>
+            {/* Fake Gauge */}
+            <div className="h-24 bg-gray-100 rounded-t-full w-48 mx-auto mt-4 border-b-4 border-gray-200"></div>
+            
+            {/* Fake Feature Bars */}
+            <div className="space-y-3 mt-4">
+              <div className="h-2 bg-gray-200 rounded w-full"></div>
+              <div className="h-2 bg-gray-200 rounded w-5/6"></div>
+              <div className="h-2 bg-gray-200 rounded w-4/6"></div>
+              <div className="h-2 bg-gray-200 rounded w-3/4"></div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-3">
+            <div className="h-3 bg-gray-200 rounded w-2/3 mb-2"></div>
+            <div className="h-12 bg-gray-50 rounded border border-gray-100 w-full"></div>
+            <div className="h-12 bg-gray-50 rounded border border-gray-100 w-full"></div>
+          </div>
         </div>
       )}
 
-      {/* Error State */}
+      {/* REQ-03: Friendly Error State with Retry */}
       {error && !loading && (
-        <div className="m-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 space-y-2">
-          <div className="flex items-center gap-2 font-bold text-xs">
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-            <span>Erro no processamento</span>
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4">
+          <div className="bg-red-50 p-4 rounded-full">
+            <ServerCrash className="h-8 w-8 text-red-500" />
           </div>
-          <p className="text-xs text-red-600 leading-relaxed">{error}</p>
+          <div className="space-y-1">
+            <p className="font-bold text-gray-800 text-sm">Falha na Análise</p>
+            <p className="text-xs text-gray-500">{error}</p>
+          </div>
           <button 
-            onClick={() => setError(null)}
-            className="text-[11px] text-red-700 underline font-semibold mt-1"
+            onClick={handleClearAnalysis}
+            className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-md text-xs font-bold hover:bg-gray-700 transition-colors"
           >
-            Fechar aviso
+            <RefreshCw className="w-3.5 h-3.5" />
+            Tentar Novamente
           </button>
         </div>
       )}
 
       {/* Empty State / Welcome Screen */}
-      {!data && !loading && (
+      {!data && !loading && !error && (
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-6">
           <div className="space-y-4 flex flex-col items-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-2"></div>
             <p className="font-semibold text-gray-700">Aguardando e-mail...</p>
             <p className="text-sm text-gray-500 leading-relaxed">
-              Por favor, abra a extensão <strong>antes</strong> de entrar no e-mail no Gmail ou Outlook.
+              Abra uma mensagem no Gmail ou Outlook para iniciar a detecção.
             </p>
           </div>
         </div>
       )}
 
-      {/* Analysis Result Screen */}
+      {/* Analysis Result Screen (Mantido idêntico ao original, pois já estava ótimo) */}
       {data && !loading && (
         <div className="p-3 space-y-3 flex-1 overflow-y-auto">
           {/* Action Bar */}
