@@ -1,8 +1,23 @@
 version: '3.8'
 
 services:
+  # 1. Broker de Mensagens (Fila)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # 2. A sua API FastAPI atual (Consumidor)
   api:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     ports:
@@ -12,4 +27,30 @@ services:
     environment:
       - MODEL_BACKEND=sklearn
       - API_V1_STR=/api/v1
+      # A API precisa de saber onde está o Redis para ir buscar as tarefas
+      - CELERY_BROKER_URL=redis://redis:6379/0 
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
     restart: unless-stopped
+
+  # 3. O novo Worker IMAP (Produtor)
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker # Vamos criar este ficheiro a seguir
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      # Credenciais de e-mail (usar variáveis de ambiente no sistema real)
+      - IMAP_SERVER=imap.gmail.com
+      - IMAP_USER=seu_email_de_teste@gmail.com
+      - IMAP_PASS=sua_app_password
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  redis_data:
