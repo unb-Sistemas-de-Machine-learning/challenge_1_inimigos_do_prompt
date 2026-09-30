@@ -1,13 +1,35 @@
 export function extractEmailContent(): { subject: string; bodyText: string } | null {
-  // Captura o corpo da mensagem no Gmail ou Outlook
-  const gmailBody = document.querySelector('.a3s.aiL');
-  const outlookBody = document.querySelector('.x_WordSection1') || document.querySelector('[aria-label="Corpo da mensagem"]');
-  const bodyElement = gmailBody || outlookBody;
-  
-  // Captura o assunto
-  const gmailSubject = document.querySelector('h2[data-thread-perm-id]') || document.querySelector('.hP');
-  const outlookSubject = document.querySelector('.ms-font-weight-semibold.ms-font-color-neutralPrimary');
-  const subjectHeader = gmailSubject || outlookSubject;
+  // 1. Array de seletores robustos para o Corpo da Mensagem
+  const bodySelectors = [
+    '.a3s.aiL', // Gmail
+    '.x_WordSection1', // Outlook Live antigo
+    '[aria-label="Corpo da mensagem"]', // Outlook Web (PT)
+    '[aria-label="Message body"]', // Outlook Web (EN)
+    'div[data-testid="message-view-body"]', // Outlook Web (Novo layout 2024+)
+    '.BodyFragment' // Fallback estrutural
+  ];
+
+  // Encontra o primeiro seletor que exista na página atual
+  let bodyElement = null;
+  for (const selector of bodySelectors) {
+    bodyElement = document.querySelector(selector);
+    if (bodyElement) break;
+  }
+
+  // 2. Array de seletores para o Assunto
+  const subjectSelectors = [
+    'h2[data-thread-perm-id]', // Gmail
+    '.hP', // Gmail (Fallback)
+    '.ms-font-weight-semibold.ms-font-color-neutralPrimary', // Outlook Live
+    '[data-testid="message-view-subject"]', // Outlook Web Novo
+    'span.Jm39D' // Outlook Web (Classe frequente)
+  ];
+
+  let subjectHeader = null;
+  for (const selector of subjectSelectors) {
+    subjectHeader = document.querySelector(selector);
+    if (subjectHeader) break;
+  }
 
   if (!bodyElement) return null;
 

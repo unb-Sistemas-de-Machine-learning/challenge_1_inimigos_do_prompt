@@ -1,63 +1,53 @@
 import { extractEmailContent } from './extractor';
-import { highlightTermsInDOM } from './highlighter';
-import { AnalyzeRequest } from '../types';
 
-let hasAnalyzed = false;
+// Variável para armazenar o URL ou ID do último e-mail analisado
+let lastProcessedUrl = location.href;
 
-function initAnalysis(force: boolean = false) {
-  if (hasAnalyzed && !force) return;
-
+function processCurrentEmail() {
   const content = extractEmailContent();
-  
-  if (content && content.bodyText.length > 30) {
-    hasAnalyzed = true;
-    
-    const payload: AnalyzeRequest = {
-      subject: content.subject,
-      raw_text: content.bodyText
-    };
-
-    chrome.runtime.sendMessage({ type: 'ANALYZE_EMAIL', payload }, (response) => {
-      if (response && response.type === 'ANALYSIS_RESULT') {
-        const { highlighted_terms } = response.payload;
-        if (highlighted_terms && highlighted_terms.length > 0) {
-          highlightTermsInDOM(highlighted_terms);
-        }
-      }
-    });
-  } else if (force) {
-    chrome.runtime.sendMessage({
-      type: 'ERROR',
-      error: 'Não foi possível extrair o texto da mensagem. Certifique-se de estar com um e-mail aberto.'
-    });
+  if (content) {
+    console.log("[Inimigos do Prompt] E-mail extraído com sucesso no Outlook/Gmail.");
+    // Envia para o Background/Painel
+    chrome.runtime.sendMessage({ type: 'EMAIL_EXTRACTED', payload: content });
   }
 }
 
-// Escuta comandos manuais disparados pelo Side Panel ou Service Worker
-chrome.runtime.onMessage.addListener((message: any) => {
-  if (message.type === 'TRIGGER_EXTRACTION') {
-    initAnalysis(true);
+// 1. O Observador de Mutações (MutationObserver)
+const observer = new MutationObserver(() => {
+  // A verificação via URL funciona bem nos SPAs de webmail modernos, 
+  // pois eles alteram o URL (hash ou path) ao trocar de mensagem.
+  if (location.href !== lastProcessedUrl) {
+    lastProcessedUrl = location.href;
+    console.log("[Inimigos do Prompt] Mudança de e-mail detetada (SPA).");
+    
+    // Dá um pequeno atraso para o DOM do Outlook Web renderizar o novo texto
+    setTimeout(processCurrentEmail, 1500); 
   }
 });
 
-// Observa mudanças no DOM para capturar carregamento de e-mails dinâmicos (SPA)
-const observer = new MutationObserver(() => {
-  // Simple debounce
-  setTimeout(() => {
-    const gmailBody = document.querySelector('.a3s.aiL');
-    const outlookBody = document.querySelector('.x_WordSection1') || document.querySelector('[aria-label="Corpo da mensagem"]');
+// Inicia a observação no corpo inteiro da página assim que possível
+function initObserver() {
+  const targetNode = document.body;
+  const config = { childList: true, subtree: true };
+  
+  if (targetNode) {
+    observer.observe(targetNode, config);
+    console.log("[Inimigos do Prompt] MutationObserver injetado com sucesso.");
     
-    if (gmailBody || outlookBody) {
-      initAnalysis();
-    } else {
-      // Se saiu do e-mail, reseta a flag
-      hasAnalyzed = false;
-    }
-  }, 1000);
+    // Tenta processar o e-mail caso o utilizador tenha aberto a página diretamente na mensagem
+    setTimeout(processCurrentEmail, 2000);
+  } else {
+    // Tenta novamente se o DOM não estiver pronto
+    setTimeout(initObserver, 500);
+  }
+}
+
+// Inicializa a extensão
+initObserver();
+
+// Mantém a capacidade de receber comandos manuais do App.tsx (Botão "Nova Análise")
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'TRIGGER_EXTRACTION') {
+    processCurrentEmail();
+  }
 });
-
-observer.observe(document.body, { childList: true, subtree: true });
-
-// Tenta iniciar caso a página já tenha carregado o e-mail
-initAnalysis();
-
