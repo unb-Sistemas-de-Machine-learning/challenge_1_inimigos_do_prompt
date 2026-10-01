@@ -26,7 +26,8 @@ export default defineConfig({
 				{ label: 'Execução PoC & API', slug: 'execucao_poc_api' },
 				{ label: 'Extensão Web (Frontend)', slug: 'extensao_frontend' },
 				{ label: 'Backend API', slug: 'backend_api' },
-				{ label: 'Guia de Configuração', slug: 'setup' }
+				{ label: 'Guia de Configuração', slug: 'setup' },
+				{ label: 'Autenticação & Deploy', slug: 'auth_integracao' }
 			],
 		}),
 	],
