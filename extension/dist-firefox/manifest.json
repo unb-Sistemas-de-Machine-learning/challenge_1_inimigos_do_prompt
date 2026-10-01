@@ -1,0 +1,75 @@
+{
+  "manifest_version": 3,
+  "name": "Inimigos do Prompt",
+  "short_name": "Inimigos do Prompt",
+  "version": "1.0.0",
+  "description": "Analisa newsletters de tecnologia diretamente no seu e-mail para detectar sensacionalismo e hype.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://localhost:8000/*",
+    "http://127.0.0.1:8000/*",
+    "https://mail.google.com/*",
+    "https://outlook.live.com/*",
+    "https://outlook.office.com/*"
+  ],
+  "background": {
+    "scripts": [
+      "service-worker-loader.js"
+    ],
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "js": [
+        "assets/index.ts-DYNfK2Do.js"
+      ],
+      "matches": [
+        "https://mail.google.com/*",
+        "https://outlook.live.com/*"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "logo.png",
+    "48": "logo.png",
+    "128": "logo.png"
+  },
+  "action": {
+    "default_title": "Abrir Painel",
+    "default_icon": {
+      "16": "logo.png",
+      "48": "logo.png",
+      "128": "logo.png"
+    }
+  },
+  "sidebar_action": {
+    "default_panel": "index.html"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "inimigos-do-prompt@unb.br",
+      "strict_min_version": "109.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "matches": [
+        "https://mail.google.com/*",
+        "https://outlook.live.com/*"
+      ],
+      "resources": [
+        "assets/index.ts-DYNfK2Do.js"
+      ]
+    }
+  ]
+}
