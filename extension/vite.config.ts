@@ -26,7 +26,10 @@ if (browserTarget === 'firefox') {
   manifest.browser_specific_settings = {
     gecko: {
       id: "inimigos-do-prompt@unb.br",
-      strict_min_version: "109.0"
+      strict_min_version: "109.0",
+      data_collection_permissions: {
+        required: ["none"]
+      }
     }
   };
 
