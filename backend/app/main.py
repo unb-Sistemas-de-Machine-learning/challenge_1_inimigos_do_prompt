@@ -12,8 +12,8 @@ app = FastAPI(
 # CORS configuration to allow Chrome extensions and local dev
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Em prod, restringir para origin da extensão
-    allow_credentials=True,
+    allow_origins=["*"],  # Permite qualquer origem (Vite local, ou extensão)
+    allow_credentials=False, # Precisa ser False quando usa "*"
     allow_methods=["*"],
     allow_headers=["*"],
 )
