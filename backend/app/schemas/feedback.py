@@ -7,3 +7,4 @@ class FeedbackRequest(BaseModel):
     claim_index: Optional[int] = None
     slider_value: Optional[int] = None
     comment: Optional[str] = None
+    original_text: Optional[str] = None

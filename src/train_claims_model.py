@@ -22,6 +22,14 @@ def main():
     df = pd.read_csv(DATASET_PATH)
     print(f"Dataset carregado com {len(df)} registros. Colunas encontradas: {list(df.columns)}")
 
+    feedback_path = os.path.join(DATA_DIR, "feedback_dataset.csv")
+    if os.path.exists(feedback_path):
+        df_feedback = pd.read_csv(feedback_path)
+        print(f"Dataset de feedback carregado com {len(df_feedback)} registros.")
+        df_feedback = df_feedback.rename(columns={"text": "claim", "label": "target"})
+        df = pd.concat([df, df_feedback], ignore_index=True)
+        print(f"Total de registros após mesclagem com feedback: {len(df)}")
+
     # Correção à prova de falhas: recria o 'target' se ele não estiver no CSV
     if 'target' not in df.columns:
         if 'label' in df.columns:

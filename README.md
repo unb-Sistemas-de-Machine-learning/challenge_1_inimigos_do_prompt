@@ -27,6 +27,21 @@ O modelo principal para classificação de sensacionalismo/hype é o **BERTimbau
   2. Configure a variável de ambiente no backend: `MODEL_BACKEND=bertimbau` (ou defina `MODEL_PATH=gustant1/bertimbau-sensacionalismo`)
   3. Ao iniciar a API FastAPI, o backend baixará e carregará automaticamente os pesos do modelo diretamente do Hugging Face Hub (ou de um diretório local baixado).
 
+## Pipeline de Retreinamento (Human-in-the-Loop)
+
+Para atualizar o modelo de classificação de alegações (claims) com os dados coletados através do feedback dos usuários (falsos positivos reportados na extensão), você pode utilizar o nosso pipeline de retreinamento. Siga estes passos simples:
+
+1. Extraia e processe os dados reportados na extensão:
+   ```bash
+   python src/process_feedback.py
+   ```
+2. Realize o retreinamento do baseline que agora irá mesclar o feedback com o dataset original:
+   ```bash
+   python src/train_claims_model.py
+   ```
+
+Desta forma, a IA aprende e corrige seus erros com base nos relatos reais identificados no dia a dia.
+
 ## Componentes
 
 | Diretório | Finalidade |
