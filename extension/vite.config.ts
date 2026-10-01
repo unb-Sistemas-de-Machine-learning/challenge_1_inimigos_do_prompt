@@ -61,6 +61,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         dashboard: 'dashboard.html',
+        index: 'index.html',
       },
     },
   },
