@@ -27,3 +27,5 @@ feedback_log.jsonl
 .DS_Store
 *.DS_Store
 
+# Variáveis de Ambiente
+.env

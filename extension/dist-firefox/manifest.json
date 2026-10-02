@@ -5,7 +5,6 @@
   "version": "1.0.0",
   "description": "Analisa newsletters de tecnologia diretamente no seu e-mail para detectar sensacionalismo e hype.",
   "permissions": [
-    "sidePanel",
     "storage",
     "activeTab",
     "tabs"
@@ -18,16 +17,20 @@
     "https://outlook.office.com/*"
   ],
   "background": {
-    "service_worker": "src/background/service-worker.ts",
+    "scripts": [
+      "service-worker-loader.js"
+    ],
     "type": "module"
   },
   "content_scripts": [
     {
+      "js": [
+        "assets/index.ts-DYNfK2Do.js"
+      ],
       "matches": [
         "https://mail.google.com/*",
         "https://outlook.live.com/*"
       ],
-      "js": ["src/content/index.ts"],
       "run_at": "document_idle"
     }
   ],
@@ -36,9 +39,6 @@
     "48": "logo.png",
     "128": "logo.png"
   },
-  "side_panel": {
-    "default_path": "index.html"
-  },
   "action": {
     "default_title": "Abrir Painel",
     "default_icon": {
@@ -46,5 +46,30 @@
       "48": "logo.png",
       "128": "logo.png"
     }
-  }
+  },
+  "sidebar_action": {
+    "default_panel": "index.html"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "inimigos-do-prompt@unb.br",
+      "strict_min_version": "109.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "matches": [
+        "https://mail.google.com/*",
+        "https://outlook.live.com/*"
+      ],
+      "resources": [
+        "assets/index.ts-DYNfK2Do.js"
+      ]
+    }
+  ]
 }

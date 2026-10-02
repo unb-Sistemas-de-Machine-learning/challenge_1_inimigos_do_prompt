@@ -1,12 +1,12 @@
 import uuid
-from fastapi import APIRouter
-
+from fastapi import APIRouter, Depends
+from app.services.auth import get_current_user
 from app.schemas.analyze import AnalyzeRequest, AnalyzeResponse, HighlightedTerm, SuspiciousClaim
 
 router = APIRouter()
 
 @router.post("/analyze", response_model=AnalyzeResponse)
-async def analyze_text(payload: AnalyzeRequest):
+async def analyze_text(payload: AnalyzeRequest, user: dict = Depends(get_current_user)):
     from app.services.preprocessor import clean_text, extract_hype_features
     from app.services.classifier import classify
     from app.services.explainer import generate_highlighted_terms, extract_suspicious_claims

@@ -5,11 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run build:chrome",
+    "build:chrome": "BROWSER=chrome tsc -b && BROWSER=chrome vite build",
+    "build:firefox": "BROWSER=firefox tsc -b && BROWSER=firefox vite build",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
     "autoprefixer": "^10.5.4",
     "lucide-react": "^1.39.0",
     "postcss": "^8.5.26",

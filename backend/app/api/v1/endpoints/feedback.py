@@ -1,9 +1,10 @@
 import os
 import json
 from datetime import datetime, timezone
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from app.schemas.feedback import FeedbackRequest
+from app.services.auth import get_current_user
 
 router = APIRouter()
 
@@ -11,7 +12,7 @@ router = APIRouter()
 FEEDBACK_LOG_FILE = os.path.join(os.path.dirname(__file__), "../../../../feedback_log.jsonl")
 
 @router.post("/feedback", status_code=201)
-async def submit_feedback(payload: FeedbackRequest):
+async def submit_feedback(payload: FeedbackRequest, user: dict = Depends(get_current_user)):
     record = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "email_id": payload.email_id,

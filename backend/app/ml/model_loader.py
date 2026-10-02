@@ -1,7 +1,10 @@
 import os
 import joblib
 import logging
-import torch
+try:
+    import torch
+except ImportError:
+    torch = None
 from app.config import settings
 
 logger = logging.getLogger(__name__)

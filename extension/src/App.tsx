@@ -1,16 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AnalyzeResponse } from './types';
 import { sendFeedback, checkHealth } from './services/api';
+import { supabase } from './lib/supabase';
+import { Auth } from './Auth';
 import { 
   AlertTriangle, 
   CheckCircle2, 
   RefreshCw, 
   Send, 
   ExternalLink, 
-  Loader2
+  Loader2,
+  LogOut
 } from 'lucide-react';
 
 function App() {
+  const [session, setSession] = useState<any>(null);
   const [data, setData] = useState<AnalyzeResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,11 +44,21 @@ function App() {
   }, []);
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
     // 1. Verifica conexão com o backend FastAPI
     verifyHealth();
 
     // 2. Carrega última análise do cache local se disponível
-    if (chrome.storage?.local) {
+    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
       chrome.storage.local.get(['current_analysis'], (result) => {
         if (result.current_analysis) {
           setData(result.current_analysis as AnalyzeResponse);
@@ -67,10 +81,12 @@ function App() {
       }
     };
 
-    chrome.runtime?.onMessage?.addListener(listener);
+    if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
+      chrome.runtime.onMessage.addListener(listener);
+    }
 
     // Auto-trigger analysis when opening the popup
-    if (chrome.tabs) {
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs[0]?.id) {
           chrome.tabs.sendMessage(tabs[0].id, { type: 'TRIGGER_EXTRACTION' }).catch(() => {});
@@ -79,7 +95,10 @@ function App() {
     }
 
     return () => {
-      chrome.runtime?.onMessage?.removeListener(listener);
+      subscription.unsubscribe();
+      if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
+        chrome.runtime.onMessage.removeListener(listener);
+      }
     };
   }, [verifyHealth]);
 
@@ -136,16 +155,28 @@ function App() {
     }
   };
 
+  if (!session) {
+    return <Auth onSession={setSession} />;
+  }
+
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col font-sans text-gray-800">
       {/* Header */}
       <header className="bg-gray-200 px-4 py-2.5 flex items-center justify-between shadow-sm border-b border-gray-300">
-        <div>
-          <h1 className="text-xs font-black text-gray-800 tracking-wider uppercase">
-            INIMIGOS DO PROMPT
-          </h1>
-          <p className="text-[10px] text-gray-500 font-medium">Relatório de IA & Hype Tech</p>
+        <div className="flex items-center gap-2">
+          {/* Logo redonda da aba */}
+          <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-300 shadow-sm">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
+          </div>
+          <div>
+            <h1 className="text-xs font-black text-gray-800 tracking-wider uppercase">
+              INIMIGOS DO PROMPT
+            </h1>
+            <p className="text-[10px] text-gray-500 font-medium">Relatório de IA & Hype Tech</p>
+          </div>
         </div>
+
+        <div className="flex items-center gap-2">
 
         {/* Backend Status Indicator */}
         <div className="flex items-center gap-1.5 bg-white/70 px-2 py-1 rounded-full border border-gray-300 text-[10px] font-semibold">
@@ -168,6 +199,15 @@ function App() {
               <RefreshCw className="w-3 h-3" />
             </button>
           )}
+        </div>
+
+        <button 
+          onClick={async () => await supabase.auth.signOut()} 
+          title="Sair"
+          className="bg-white/70 hover:bg-red-50 text-gray-500 hover:text-red-500 p-1.5 rounded-full border border-gray-300 transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+        </button>
         </div>
       </header>
 
@@ -253,40 +293,42 @@ function App() {
             </div>
             
             {/* Gauge Graphic */}
-            <div className="flex justify-center mb-4 relative h-24">
-              <svg viewBox="0 0 200 100" className="w-48 h-24 overflow-visible">
-                <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#e5e7eb" strokeWidth="24" strokeLinecap="round" />
-                <path 
-                  d="M 20 100 A 80 80 0 0 1 180 100" 
-                  fill="none" 
-                  stroke="url(#gauge-gradient)" 
-                  strokeWidth="24" 
-                  strokeLinecap="round" 
-                  strokeDasharray="251.2" 
-                  strokeDashoffset={251.2 * (1 - ((data.sensationalism_score - 1) / 4))} 
-                  className="transition-all duration-1000 ease-out" 
-                />
-                <defs>
-                  <linearGradient id="gauge-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#10b981" />
-                    <stop offset="45%" stopColor="#f59e0b" />
-                    <stop offset="100%" stopColor="#ef4444" />
-                  </linearGradient>
-                </defs>
-                {/* Needle */}
-                <g 
-                  style={{ 
-                    transform: `rotate(${-90 + ((data.sensationalism_score - 1) / 4) * 180}deg)`, 
-                    transformOrigin: '100px 100px' 
-                  }} 
-                  className="transition-transform duration-1000 ease-out"
-                >
-                  <polygon points="97,100 103,100 100,20" fill="#374151" />
-                  <circle cx="100" cy="100" r="5" fill="#374151" />
-                </g>
-              </svg>
+            <div className="flex flex-col items-center justify-center mb-2">
+              <div className="relative h-24 flex justify-center w-full">
+                <svg viewBox="0 0 200 100" className="w-48 h-24 overflow-visible">
+                  <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#e5e7eb" strokeWidth="24" strokeLinecap="round" />
+                  <path 
+                    d="M 20 100 A 80 80 0 0 1 180 100" 
+                    fill="none" 
+                    stroke="url(#gauge-gradient)" 
+                    strokeWidth="24" 
+                    strokeLinecap="round" 
+                    strokeDasharray="251.2" 
+                    strokeDashoffset={251.2 * (1 - ((data.sensationalism_score - 1) / 4))} 
+                    className="transition-all duration-1000 ease-out" 
+                  />
+                  <defs>
+                    <linearGradient id="gauge-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#10b981" />
+                      <stop offset="45%" stopColor="#f59e0b" />
+                      <stop offset="100%" stopColor="#ef4444" />
+                    </linearGradient>
+                  </defs>
+                  {/* Needle */}
+                  <g 
+                    style={{ 
+                      transform: `rotate(${-90 + ((data.sensationalism_score - 1) / 4) * 180}deg)`, 
+                      transformOrigin: '100px 100px' 
+                    }} 
+                    className="transition-transform duration-1000 ease-out"
+                  >
+                    <polygon points="97,100 103,100 100,20" fill="#374151" />
+                    <circle cx="100" cy="100" r="5" fill="#374151" />
+                  </g>
+                </svg>
+              </div>
 
-              <div className="absolute bottom-0 text-center">
+              <div className="text-center mt-3">
                 <span className="text-2xl font-black text-gray-800">
                   {data.sensationalism_score.toFixed(1)}
                 </span>

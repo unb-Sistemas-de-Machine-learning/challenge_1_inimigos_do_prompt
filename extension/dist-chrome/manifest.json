@@ -18,7 +18,7 @@
     "https://outlook.office.com/*"
   ],
   "background": {
-    "service_worker": "src/background/service-worker.ts",
+    "service_worker": "service-worker-loader.js",
     "type": "module"
   },
   "content_scripts": [
@@ -27,7 +27,9 @@
         "https://mail.google.com/*",
         "https://outlook.live.com/*"
       ],
-      "js": ["src/content/index.ts"],
+      "js": [
+        "src/content/index.ts-loader.js"
+      ],
       "run_at": "document_idle"
     }
   ],
@@ -46,5 +48,17 @@
       "48": "logo.png",
       "128": "logo.png"
     }
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "resources": [
+        "**/*",
+        "*"
+      ],
+      "use_dynamic_url": false
+    }
+  ]
 }
