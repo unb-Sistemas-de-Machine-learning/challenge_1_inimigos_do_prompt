@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { supabase } from './lib/supabase';
 
+// URL pública para onde o Supabase vai redirecionar após verificação de e-mail.
+// NUNCA deve ser localhost — a extensão não tem uma URL acessível publicamente.
+const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://unb-sistemas-de-machine-learning.github.io/challenge_1_inimigos_do_prompt';
+
 export function Auth({ onSession }: { onSession: (session: any) => void }) {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
@@ -27,9 +31,14 @@ export function Auth({ onSession }: { onSession: (session: any) => void }) {
         const { error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            // Redireciona para o site público após clicar no link do e-mail.
+            // Isso evita que o Supabase use localhost como destino.
+            emailRedirectTo: `${SITE_URL}`,
+          },
         });
         if (error) throw error;
-        setMessage('Cadastro realizado! Verifique seu e-mail para confirmar.');
+        setMessage('Cadastro realizado! Verifique seu e-mail para confirmar a conta.');
       }
     } catch (err: any) {
       setError(err.message || 'Ocorreu um erro durante a autenticação.');

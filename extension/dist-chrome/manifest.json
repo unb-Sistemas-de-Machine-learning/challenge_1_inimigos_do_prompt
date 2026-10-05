@@ -23,12 +23,12 @@
   },
   "content_scripts": [
     {
+      "js": [
+        "assets/index.ts-DYNfK2Do.js"
+      ],
       "matches": [
         "https://mail.google.com/*",
         "https://outlook.live.com/*"
-      ],
-      "js": [
-        "src/content/index.ts-loader.js"
       ],
       "run_at": "document_idle"
     }
@@ -52,11 +52,11 @@
   "web_accessible_resources": [
     {
       "matches": [
-        "<all_urls>"
+        "https://mail.google.com/*",
+        "https://outlook.live.com/*"
       ],
       "resources": [
-        "**/*",
-        "*"
+        "assets/index.ts-DYNfK2Do.js"
       ],
       "use_dynamic_url": false
     }
