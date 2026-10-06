@@ -93,7 +93,22 @@ chrome.action?.onClicked?.addListener(async (tab) => {
     try {
       await chrome.sidePanel.open({ tabId: tab.id });
     } catch {
-      // Ignora erro se a aba for interna (ex: chrome://) ou já estiver aberto
+      // Ignora erro
+    }
+  } else {
+    // Fallback para Firefox (sidebarAction)
+    try {
+      // Tenta usar a API do Firefox para abrir a sidebar
+      // @ts-ignore
+      if (typeof browser !== 'undefined' && browser.sidebarAction && browser.sidebarAction.toggle) {
+        // @ts-ignore
+        await browser.sidebarAction.toggle();
+      } else {
+        // Fallback genérico para abrir em nova aba
+        chrome.tabs.create({ url: chrome.runtime.getURL("index.html") });
+      }
+    } catch {
+      chrome.tabs.create({ url: chrome.runtime.getURL("index.html") });
     }
   }
 });
