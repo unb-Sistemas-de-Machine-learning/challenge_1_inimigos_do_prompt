@@ -1,52 +1,52 @@
 {
   "../../../../../../@crx/manifest": {
-    "file": "assets/crx-manifest.js--g1xk4z4.js",
+    "file": "assets/crx-manifest.js-D50UYyB_.js",
     "name": "crx-manifest.js",
     "src": "../../../../../../@crx/manifest",
     "isEntry": true
   },
-  "_api-CbBQ0jnB.js": {
-    "file": "assets/api-CbBQ0jnB.js",
+  "_api-CzA5jm5L.js": {
+    "file": "assets/api-CzA5jm5L.js",
     "name": "api"
   },
-  "_src-DGwkoPSn.css": {
-    "file": "assets/src-DGwkoPSn.css",
-    "src": "_src-DGwkoPSn.css"
-  },
-  "_src-DOATewHh.js": {
-    "file": "assets/src-DOATewHh.js",
+  "_src-BFkSIWz2.js": {
+    "file": "assets/src-BFkSIWz2.js",
     "name": "src",
     "css": [
-      "assets/src-DGwkoPSn.css"
+      "assets/src-CtdQ359t.css"
     ]
   },
+  "_src-CtdQ359t.css": {
+    "file": "assets/src-CtdQ359t.css",
+    "src": "_src-CtdQ359t.css"
+  },
   "dashboard.html": {
-    "file": "assets/dashboard-BscJS2Kk.js",
+    "file": "assets/dashboard-BHmRhn5t.js",
     "name": "dashboard",
     "src": "dashboard.html",
     "isEntry": true,
     "imports": [
-      "_src-DOATewHh.js",
-      "_api-CbBQ0jnB.js"
+      "_src-BFkSIWz2.js",
+      "_api-CzA5jm5L.js"
     ]
   },
   "index.html": {
-    "file": "assets/index-gnOzrlgp.js",
+    "file": "assets/index-kKo-GcFk.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
     "imports": [
-      "_src-DOATewHh.js",
-      "_api-CbBQ0jnB.js"
+      "_src-BFkSIWz2.js",
+      "_api-CzA5jm5L.js"
     ]
   },
   "src/background/service-worker.ts": {
-    "file": "assets/service-worker.ts-BJuiBJS3.js",
+    "file": "assets/service-worker.ts-aiRgAima.js",
     "name": "service-worker.ts",
     "src": "src/background/service-worker.ts",
     "isEntry": true,
     "imports": [
-      "_api-CbBQ0jnB.js"
+      "_api-CzA5jm5L.js"
     ]
   },
   "src/content/index.ts": {
