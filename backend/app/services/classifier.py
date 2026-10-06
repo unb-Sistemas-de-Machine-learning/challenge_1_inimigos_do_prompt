@@ -2,9 +2,10 @@ try:
     import torch
 except ImportError:
     torch = None
+import json
 import logging
 import requests
-from typing import Protocol, Tuple
+from typing import Optional, Protocol, Tuple
 from app.ml.model_loader import ml_loader
 from app.config import settings
 
@@ -136,6 +137,52 @@ class HuggingFaceAPIStrategy:
              return _heuristic_mock_classify(features)
 
 
+class GradioSpaceStrategy:
+    """Chama um Hugging Face Space Gradio (endpoint /predict) via REST."""
+    def __init__(self, space_url: str, api_token: Optional[str] = None, api_name: str = "predict"):
+        self.base = space_url.rstrip("/")
+        self.api_name = api_name
+        self.headers = {"Authorization": f"Bearer {api_token}"} if api_token else {}
+
+    def predict(self, text: str, features: dict) -> Tuple[str, float]:
+        try:
+            url = f"{self.base}/gradio_api/call/{self.api_name}"
+            r = requests.post(url, headers=self.headers, json={"data": [text[:5000]]}, timeout=30)
+            r.raise_for_status()
+            event_id = r.json()["event_id"]
+
+            result = None
+            with requests.get(f"{url}/{event_id}", headers=self.headers, stream=True, timeout=60) as resp:
+                resp.raise_for_status()
+                event = None
+                for line in resp.iter_lines(decode_unicode=True):
+                    if line.startswith("event:"):
+                        event = line.split(":", 1)[1].strip()
+                        if event == "error":
+                            raise RuntimeError("Space retornou erro")
+                    elif line.startswith("data:") and event == "complete":
+                        result = json.loads(line.split(":", 1)[1])[0]
+                        break
+            if result is None:
+                raise RuntimeError("Sem resposta do Space")
+
+            label = str(result.get("label", "")).lower()
+            conf = result.get("confidences") or []
+            conf_value = conf[0]["confidence"] if conf else 0.5
+            # O Space retorna só a classe vencedora: 'sensacionalista' ou 'sobrio'
+            prob_hype = conf_value if label.startswith("sensac") else 1.0 - conf_value
+
+            heuristic_boost = (features.get("uppercase_words_percentage", 0) * 0.2 +
+                               min(features.get("exclamation_density", 0), 0.1) +
+                               features.get("extreme_adjectives_count", 0) * 0.05)
+            final_prob = min(prob_hype + heuristic_boost, 1.0)
+            score = max(min(1.0 + final_prob * 4.0, 5.0), 1.0)
+            return _get_label(score), round(score, 2)
+        except Exception as e:
+            logger.error(f"Erro ao chamar o Space Gradio: {e}")
+            return _heuristic_mock_classify(features)
+
+
 class FallbackStrategy:
     def predict(self, text: str, features: dict) -> Tuple[str, float]:
         return _heuristic_mock_classify(features)
@@ -162,6 +209,11 @@ _strategy = FallbackStrategy()
 if settings.model_backend == "huggingface_api":
     _strategy = HuggingFaceAPIStrategy(
          api_url=settings.huggingface_api_url,
+         api_token=settings.huggingface_api_token
+    )
+elif settings.model_backend == "gradio_space":
+    _strategy = GradioSpaceStrategy(
+         space_url=settings.gradio_space_url,
          api_token=settings.huggingface_api_token
     )
 elif settings.model_backend == "bertimbau":
