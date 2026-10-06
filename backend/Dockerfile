@@ -20,5 +20,5 @@ COPY app/ ./app/
 # Expõe porta
 EXPOSE 8000
 
-# Comando pra iniciar
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Comando pra iniciar (Render injeta $PORT; fallback 8000 local)
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

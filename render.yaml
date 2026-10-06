@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: inimigos-do-prompt-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /docs
+    envVars:
+      - key: MODEL_BACKEND
+        value: sklearn
+      - key: API_V1_STR
+        value: /api/v1
