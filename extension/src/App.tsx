@@ -211,16 +211,6 @@ function App() {
         </div>
       </header>
 
-      {/* Backend Offline Warning Banner */}
-      {backendStatus === 'offline' && (
-        <div className="bg-amber-50 border-b border-amber-200 px-3 py-2 text-[11px] text-amber-800 flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <span className="font-bold">Backend FastAPI desconectado.</span> Inicie o servidor localmente com <code className="bg-amber-100 px-1 py-0.5 rounded text-[10px] font-mono">uvicorn app.main:app --port 8000</code>.
-          </div>
-        </div>
-      )}
-
       {/* Loading State */}
       {loading && (
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-3">
