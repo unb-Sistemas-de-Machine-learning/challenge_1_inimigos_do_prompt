@@ -6,10 +6,6 @@ services:
     plan: free
     envVars:
       - key: MODEL_BACKEND
-        value: "huggingface_api"
-      - key: HUGGINGFACE_API_TOKEN
-        sync: false
-      - key: HUGGINGFACE_API_URL
-        sync: false
+        value: "gradio_space"
       - key: SUPABASE_JWT_SECRET
         sync: false
