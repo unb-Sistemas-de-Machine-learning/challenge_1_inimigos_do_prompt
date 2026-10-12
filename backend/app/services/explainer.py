@@ -15,24 +15,28 @@ except LookupError:
 
 def generate_highlighted_terms(text: str) -> List[HighlightedTerm]:
     """
-    Identifica termos problemáticos no texto e atribui pesos/categorias.
-    No MVP sem SHAP integrado, usamos heurísticas baseadas em léxico.
+    Lista os sinais linguísticos de sensacionalismo encontrados no texto.
+
+    Só retorna sinais que também alimentam o `heuristic_boost` do classificador
+    (adjetivos extremos e palavras em CAPS). Os pesos são apenas níveis de
+    intensidade qualitativos (não são contribuições medidas, como SHAP).
+    Números/percentuais NÃO são sinais de sensacionalismo e ficam de fora.
     """
     terms = []
     text_lower = text.lower()
-    
-    # 1. Procurar por adjetivos extremos (Lexicon de alarme)
+
+    # 1. Adjetivos extremos (léxico de alarme)
     for pattern in EXTREME_ADJECTIVES:
         matches = set(re.findall(pattern, text_lower))
         for match in matches:
-            if len(match) > 3: # Filtra matches muito curtos
+            if len(match) > 3:  # Filtra matches muito curtos
                 terms.append(HighlightedTerm(
                     term=match.capitalize(),
                     weight=0.6,
                     category="alarmist"
                 ))
 
-    # 2. Procurar palavras em CAPS (Hype)
+    # 2. Palavras em CAPS
     words = text.split()
     upper_words = [w for w in words if w.isupper() and len(re.sub(r'[^a-zA-Z]', '', w)) > 3]
     for w in set(upper_words):
@@ -41,89 +45,53 @@ def generate_highlighted_terms(text: str) -> List[HighlightedTerm]:
             weight=0.4,
             category="hype"
         ))
-        
-    # 3. Estruturas de clickbait ("X%", "milhões", "substituir")
-    clickbait_patterns = [r'\d{1,3}%', r'\bmilh[õo]es\b', r'\bsubstitui\w*']
-    for pattern in clickbait_patterns:
-        matches = set(re.findall(pattern, text_lower))
-        for match in matches:
-            terms.append(HighlightedTerm(
-                term=match,
-                weight=0.7,
-                category="clickbait"
-            ))
 
     # Remove duplicados e ordena por peso decrescente, limitado a 8
     unique_terms = {t.term.lower(): t for t in terms}.values()
     sorted_terms = sorted(unique_terms, key=lambda x: x.weight, reverse=True)
-    
+
     return sorted_terms[:8]
 
 def extract_suspicious_claims(text: str, score: float, highlighted_terms: List[HighlightedTerm] = None) -> List[SuspiciousClaim]:
     """
-    Segmenta o texto e extrai sentenças que configuram claims suspeitas.
-    Agora prioriza frases onde os termos com maior peso foram encontrados.
+    Extrai trechos com linguagem enfática (adjetivos extremos, CAPS, exclamações).
+
+    Não avalia veracidade: apenas indica onde o tom do texto é mais sensacionalista.
+    O campo `severity` é mantido por compatibilidade com a API, mas a extensão
+    não o exibe.
     """
     claims = []
-    
+
     try:
         sentences = sent_tokenize(text)
     except Exception:
         # Fallback simples caso nltk falhe
-        sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
-
-    added_sentences = set()
-
-    if highlighted_terms:
-        for term_obj in highlighted_terms:
-            term_lower = term_obj.term.lower()
-            for sent in sentences:
-                sent_lower = sent.lower()
-                if term_lower in sent_lower and sent not in added_sentences:
-                    severity = "high" if term_obj.weight >= 0.6 else "moderate"
-                    explanation = f"Contém o termo problemático: '{term_obj.term}' (Categoria: {term_obj.category})"
-                    claims.append(SuspiciousClaim(
-                        claim=sent[:150] + ("..." if len(sent) > 150 else ""),
-                        explanation=explanation,
-                        severity=severity
-                    ))
-                    added_sentences.add(sent)
-                    break
+        sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if s.strip()]
 
     for sent in sentences:
-        if sent in added_sentences:
-            continue
         sent_lower = sent.lower()
-        
-        # Heurística 1: Percentuais extremos + promessas/ameaças
-        if re.search(r'\d{2,3}%', sent_lower) and ('substituir' in sent_lower or 'garantido' in sent_lower or 'lucro' in sent_lower):
-            claims.append(SuspiciousClaim(
-                claim=sent[:150] + ("..." if len(sent) > 150 else ""),
-                explanation="Hype exagerado, uso de percentuais absolutos sem contexto verificado.",
-                severity="moderate"
-            ))
-            added_sentences.add(sent)
-            continue
-            
-        # Heurística 2: Afirmações não científicas sobre IA/Quântica
-        if ('quântic' in sent_lower or 'consciência' in sent_lower) and ('agora' in sent_lower or 'alcançou' in sent_lower):
-            claims.append(SuspiciousClaim(
-                claim=sent[:150] + ("..." if len(sent) > 150 else ""),
-                explanation="Possível desinformação conceitual. Atribuição de capacidades comerciais não comprovadas a tecnologias experimentais.",
-                severity="high"
-            ))
-            added_sentences.add(sent)
-            continue
-            
-        # Heurística 3: Adjetivos extremos acumulados
-        extreme_count = sum(1 for p in EXTREME_ADJECTIVES if re.search(p, sent_lower))
-        if extreme_count >= 2:
-            claims.append(SuspiciousClaim(
-                claim=sent[:150] + ("..." if len(sent) > 150 else ""),
-                explanation="Excesso de gatilhos emocionais e linguagem alarmista.",
-                severity="moderate"
-            ))
-            added_sentences.add(sent)
+        reasons = []
 
-    # Limita a 5 claims
+        adjectives = [m.group(0) for p in EXTREME_ADJECTIVES for m in [re.search(p, sent_lower)] if m]
+        if adjectives:
+            reasons.append("adjetivos extremos: " + ", ".join(f"'{a}'" for a in adjectives))
+
+        caps = [w for w in sent.split() if w.isupper() and len(re.sub(r'[^a-zA-Z]', '', w)) > 3]
+        if caps:
+            reasons.append("palavras em CAPS: " + ", ".join(f"'{w}'" for w in caps[:3]))
+
+        if sent.count('!') >= 1:
+            reasons.append("exclamação")
+
+        if not reasons:
+            continue
+
+        claims.append(SuspiciousClaim(
+            claim=sent[:150] + ("..." if len(sent) > 150 else ""),
+            explanation="Linguagem enfática (" + "; ".join(reasons) + ").",
+            severity="high" if len(reasons) >= 2 else "moderate"
+        ))
+
+    # Prioriza trechos com mais sinais e limita a 5
+    claims.sort(key=lambda c: c.severity != "high")
     return claims[:5]

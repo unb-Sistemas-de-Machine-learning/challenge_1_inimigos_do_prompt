@@ -48,7 +48,7 @@ async def analyze_text(payload: AnalyzeRequest, user: dict = Depends(get_current
         label=label,
         confidence=confidence,
         highlighted_terms=highlighted_terms,
-        disclaimer='Os resultados são baseados em heurísticas. Analise criticamente.',
+        disclaimer='Mede o tom da linguagem (sensacionalismo), não a veracidade do conteúdo. Os padrões listados são heurísticas de apoio ao modelo.',
         disinformation_risk=round(risk),
         suspicious_claims=suspicious_claims
     )
