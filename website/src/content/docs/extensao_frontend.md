@@ -2,69 +2,154 @@
 title: Extensão Web Frontend
 ---
 
-A extensão é uma PoC Chrome Manifest V3 construída com React 19, TypeScript, Vite, Tailwind CSS e `@crxjs/vite-plugin`.
+A extensão do **Inimigos do Prompt** é construída com suporte a múltiplos navegadores (Google Chrome e Mozilla Firefox) no modelo Manifest V3, utilizando React 19, TypeScript, Vite, Tailwind CSS e `@crxjs/vite-plugin`.
 
-## O que funciona hoje
+---
 
-- Observa o DOM do Gmail e do Outlook Live.
-- Extrai o assunto e o texto visível da mensagem.
-- Envia o texto ao service worker, que consulta a API FastAPI e guarda a resposta no cache local.
-- Destaca no HTML da mensagem os termos retornados como relevantes.
-- Atualiza o side panel com a análise real, incluindo estado de conexão da API e ação para extrair a mensagem da aba ativa.
-- Oferece exemplos de hype e texto sóbrio que consultam a API real.
-- Oferece um dashboard que abre a análise real armazenada e pode exportá-la em JSON.
-- Envia feedback de confiança e reporte de falso positivo à API.
+## Arquitetura Interna da Extensão
 
-## Estrutura efetiva
+```mermaid
+flowchart TD
+    subgraph WebmailTab["Aba do Navegador (Gmail / Outlook)"]
+        DOM["DOM da Mensagem"]
+        Extr["extractor.ts<br/>(Sanitização & Extração)"]
+        High["highlighter.ts<br/>(Injeção de tags &lt;mark&gt;)"]
+        CS["Content Script Entry (index.ts)"]
+        
+        DOM -->|Observa mutações| Extr
+        Extr --> CS
+        CS -->|Repassa termos| High
+        High -->|Destaca no texto| DOM
+    end
+
+    subgraph BackgroundWorker["Service Worker (Manifest V3)"]
+        SW["service-worker.ts"]
+        LocalCache[("chrome.storage.local<br/>Cache de Análises & Sessão")]
+        APIClient["api.ts (Fetch com Bearer JWT)"]
+        
+        SW <--> LocalCache
+        SW --> APIClient
+    end
+
+    subgraph ExtensionUI["Interface do Usuário (Side Panel & Dashboard)"]
+        AuthView["Auth.tsx<br/>(Login/Cadastro Supabase)"]
+        Panel["App.tsx<br/>(Side Panel Interativo)"]
+        Dash["Dashboard.tsx<br/>(dashboard.html - Aba Completa)"]
+    end
+
+    CS <-->|chrome.runtime.sendMessage| SW
+    SW <-->|chrome.runtime.onMessage| Panel
+    SW <-->|chrome.runtime.onMessage| Dash
+    AuthView --> LocalCache
+    APIClient <-->|REST API| BackendServer["FastAPI Backend / Nuvem"]
+```
+
+---
+
+## Máquina de Estados do Side Panel
+
+```mermaid
+stateDiagram-v2
+    [*] --> ChecandoAutenticacao
+    
+    ChecandoAutenticacao --> Deslogado: Sem sessão ativa
+    ChecandoAutenticacao --> Autenticado: Sessão Supabase válida
+    
+    Deslogado --> Autenticado: Login / Cadastro realizado
+    Autenticado --> Deslogado: Logout
+    
+    state Autenticado {
+        [*] --> VerificandoAPI
+        VerificandoAPI --> APIOffline: GET /health falhou
+        VerificandoAPI --> APIOnline: GET /health sucesso
+        
+        APIOffline --> VerificandoAPI: Tentar reconectar
+        
+        APIOnline --> AguardandoLeitura: Sem newsletter na aba ativa
+        AguardandoLeitura --> Analisando: Extração automática ou manual
+        Analisando --> ExibindoAnalise: Resposta da API recebida
+        
+        state ExibindoAnalise {
+            [*] --> VisualizacaoMetricas
+            VisualizacaoMetricas --> EnviandoFeedback: Ajuste de slider ou reporte
+            EnviandoFeedback --> VisualizacaoMetricas: Feedback gravado
+        }
+    }
+```
+
+---
+
+## Funcionalidades Implementadas
+
+- **Detecção e Extração Automática:** Monitora as abas do Gmail (`mail.google.com`) e Outlook Live (`outlook.live.com`), isolando o conteúdo de newsletters e descartando rodapés, menus e rastreadores.
+- **Autenticação Integrada:** Telas completas de Login e Cadastro conectadas ao Supabase, gerenciando tokens JWT com persistência segura no `chrome.storage.local`.
+- **Destaque Visual de Tom (Highlighter):** Grifa no próprio corpo da mensagem os termos que mais contribuíram para o score de sensacionalismo.
+- **Painel Lateral com Diagnóstico:** Exibe status da API, termômetro de hype (1 a 5), alegações enfáticas, slider de confiança calibrável e atalho para análise manual.
+- **Dashboard Abrangente:** Tela em aba dedicada (`dashboard.html`) para inspecionar métricas linguísticas, dados da análise e exportação em formato JSON.
+- **Suporte Multi-Navegador:** Compilação nativa para **Chrome** (`side_panel`) e **Firefox** (`sidebar_action`).
+
+---
+
+## Estrutura Efetiva do Código
 
 ```text
 extension/
-├── manifest.json
-├── index.html                 # Side panel
-├── dashboard.html             # Dashboard em aba
+├── manifest.json              # Manifesto base V3
+├── index.html                 # Interface do Side Panel
+├── dashboard.html             # Interface do Dashboard
+├── vite.config.ts             # Script de build inteligente (Chrome/Firefox)
 └── src/
-    ├── App.tsx                # UI do side panel
-    ├── background/service-worker.ts
+    ├── App.tsx                # Componente principal do Side Panel
+    ├── Auth.tsx               # Interface de autenticação Supabase
+    ├── lib/
+    │   └── supabase.ts        # Cliente Supabase com storage adapter
+    ├── background/
+    │   └── service-worker.ts  # Worker de mensageria e orquestração
     ├── content/
-    │   ├── extractor.ts
-    │   ├── highlighter.ts
-    │   └── index.ts
+    │   ├── extractor.ts       # Seletores de DOM e higienização
+    │   ├── highlighter.ts     # Injetor de estilos e tags <mark>
+    │   └── index.ts           # Inicializador do content script
     ├── dashboard/
-    │   ├── Dashboard.tsx
+    │   ├── Dashboard.tsx      # Dashboard detalhado
     │   └── main.tsx
-    ├── services/api.ts
-    └── types/index.ts
+    ├── services/
+    │   └── api.ts             # Cliente HTTP com injeção de JWT
+    └── types/
+        └── index.ts           # Definição de tipos TypeScript
 ```
 
-O content script é injetado em `https://mail.google.com/*` e `https://outlook.live.com/*`. O manifesto também declara acesso a `http://localhost:8000/*`, `http://127.0.0.1:8000/*` e `https://outlook.office.com/*`; porém, não há injeção de content script para este último. O endpoint usado está fixo em `src/services/api.ts` como `http://localhost:8000`.
+---
 
-## Comunicação atual
+## Configuração e Compilação
 
-O content script envia `ANALYZE_EMAIL`. O service worker consulta o cache ou a API, guarda a resposta em `current_analysis`, responde ao content script e transmite `ANALYSIS_RESULT` para as views abertas. O content script usa a resposta para aplicar os grifos.
-
-Ao abrir, o side panel verifica `GET /health`, recupera `current_analysis` e passa a escutar as mensagens. O dashboard lê a mesma chave, portanto exibe a análise real mais recente, inclusive quando veio do cache. A ação manual de análise reenvia `TRIGGER_EXTRACTION` para a aba ativa.
-
-O side panel chama `POST /api/v1/feedback` com `confidence_slider`; o dashboard envia `false_positive` com o índice da alegação. Se a chamada do dashboard falhar, ele ainda marca o item como reportado apenas na interface daquela sessão.
-
-## Desenvolvimento e build
+Crie o arquivo `extension/.env` a partir do template:
 
 ```bash
 cd extension
-npm install
-npm run dev
+cp .env.example .env
 ```
 
-Para gerar a versão carregável pelo Chrome:
+Preencha as variáveis do Supabase e a URL da API:
+```ini
+VITE_SUPABASE_URL=https://SEU_PROJETO.supabase.co
+VITE_SUPABASE_ANON_KEY=SUA_CHAVE_ANON
+VITE_API_URL=http://localhost:8000
+```
+
+### Comandos de Build
 
 ```bash
-npm run build
+# Instalar dependências
+npm install
+
+# Compilar para Google Chrome:
+npm run build:chrome
+# Gera pasta extension/dist-chrome/
+
+# Compilar para Mozilla Firefox:
+npm run build:firefox
+# Gera pasta extension/dist-firefox/
 ```
 
-Carregue `extension/dist` em `chrome://extensions` com o modo de desenvolvedor ativado.
-
-## Limitações da PoC
-
-- Não usa Zustand, Radix/shadcn ou componentes em `src/sidepanel/`; essas referências pertencem a uma arquitetura anterior.
-- A aplicação dos destaques modifica `innerHTML`, portanto não é uma estratégia robusta para páginas complexas de webmail.
-- A análise é iniciada uma única vez por ciclo de DOM e pode não acompanhar a troca de mensagens em todos os fluxos do Gmail/Outlook.
-- Os exemplos de hype e texto sóbrio chamam a API local; não são respostas fictícias.
+- **Google Chrome:** Vá em `chrome://extensions`, ative o *Modo do desenvolvedor* e selecione `extension/dist-chrome` em **Carregar sem compactação**.
+- **Mozilla Firefox:** Vá em `about:debugging#/runtime/this-firefox`, clique em **Carregar extensão temporária** e selecione o arquivo `extension/dist-firefox/manifest.json`.

@@ -1,71 +1,185 @@
 ---
-title: Arquitetura da Extensão Web
+title: Arquitetura da Solução e Extensão Web
 ---
 
-Esta página descreve a implementação atual da PoC, não a arquitetura planejada.
+Esta página descreve a arquitetura implementada na Prova de Conceito (PoC), cobrindo o fluxo entre a extensão do navegador, o provedor de autenticação e o backend FastAPI com estratégias dinâmicas de Machine Learning.
 
-## Fluxo implementado
+---
+
+## Visão Geral da Arquitetura do Sistema
+
+```mermaid
+flowchart TB
+    subgraph ClientLayer["Camada do Cliente (Navegador Chrome / Firefox)"]
+        subgraph Webmail["Contexto do Webmail"]
+            DOM["DOM da Mensagem (Gmail/Outlook)"]
+            CS["Content Script (extractor + highlighter)"]
+        end
+        
+        subgraph ExtensionContext["Contexto da Extensão (Manifest V3)"]
+            SW["Service Worker (Background & Cache Local)"]
+            SP["Side Panel (React 19 + Tailwind)"]
+            DB["Dashboard View (dashboard.html)"]
+            AuthUI["Auth Module (Auth.tsx + Supabase JS)"]
+        end
+    end
+
+    subgraph SecurityLayer["Camada de Autenticação"]
+        Supabase["Supabase Auth (BaaS)<br/>Emissão de Tokens JWT"]
+    end
+
+    subgraph ServerLayer["Camada de Serviços (FastAPI Backend)"]
+        GW["API Router / Ingress"]
+        AuthMid["Validador JWT Bearer"]
+        CacheMem["TTLCache (Memória - 500 itens / 1h)"]
+        PreProc["Preprocessor & Heurísticas"]
+        Ctx["Classifier Context (Strategy Pattern)"]
+        Exp["Explainer Service (Léxico & Tom)"]
+        Log["feedback_log.jsonl"]
+    end
+
+    subgraph MLLayer["Camada de Inferência (Modelos de ML)"]
+        StratHF["Gradio Space Strategy<br/>(gustant1-inimigos-prompt.hf.space)"]
+        StratBert["BERTimbau Local Strategy<br/>(PyTorch / Hugging Face Hub)"]
+        StratSk["Sklearn Baseline Strategy<br/>(TF-IDF + Classificador joblib)"]
+        StratFall["Fallback Strategy<br/>(Heurístico em Regras)"]
+    end
+
+    DOM -->|Captura HTML| CS
+    CS -->|ANALYZE_EMAIL| SW
+    AuthUI <-->|Login / Sessão| Supabase
+    SW -->|Obtém Token JWT| AuthUI
+    SW -->|POST /api/v1/analyze com JWT| GW
+    GW --> AuthMid
+    AuthMid --> CacheMem
+    CacheMem -->|Se não cacheado| PreProc
+    PreProc --> Ctx
+    Ctx --> StratHF & StratBert & StratSk & StratFall
+    Ctx --> Exp
+    Exp --> GW
+    GW -->|AnalyzeResponse| SW
+    SW -->|Termos destacados| CS
+    CS -->|Injeta tags &lt;mark&gt;| DOM
+    SW -->|current_analysis| SP & DB
+    SP & DB -->|POST /api/v1/feedback| GW --> Log
+```
+
+---
+
+## Fluxo de Execução da PoC
 
 ```mermaid
 sequenceDiagram
     actor User as Usuário
+    participant DOM as Webmail DOM
     participant CS as Content Script
     participant SW as Service Worker
-    participant API as FastAPI
+    participant Auth as Supabase Auth
+    participant API as FastAPI Backend
     participant SP as Side Panel
 
-    User->>CS: Abre uma mensagem no Gmail ou Outlook Live
-    CS->>CS: Extrai assunto e texto limpo do DOM
-    CS->>SW: ANALYZE_EMAIL
-    SW->>SW: Consulta chrome.storage.local
-    SW->>API: POST /api/v1/analyze (se não houver cache)
-    API-->>SW: Score, termos e claims
-    SW->>SW: Salva current_analysis e cache
+    User->>DOM: Abre mensagem no Gmail ou Outlook Live
+    DOM->>CS: Mutação no DOM detectada
+    CS->>CS: Extrai e sanitiza texto
+    CS->>SW: Mensagem ANALYZE_EMAIL
+    SW->>SW: Verifica cache em chrome.storage.local
+    alt Se não estiver em cache
+        SW->>Auth: Recupera access_token da sessão ativa
+        SW->>API: POST /api/v1/analyze (Header Bearer JWT)
+        API->>API: Valida token, executa Strategy ML e Explainer
+        API-->>SW: Retorna Score, Termos e Alegações
+        SW->>SW: Salva em cache e current_analysis
+    end
     SW-->>CS: ANALYSIS_RESULT
-    SW-->>SP: Atualiza análise aberta
-    CS->>CS: Destaca termos no corpo da mensagem
+    CS->>DOM: Destaca termos no corpo da mensagem (&lt;mark&gt;)
+    SW-->>SP: Broadcast do resultado da análise
+    SP->>User: Exibe Score, Nível de Risco e Alegações
 ```
 
-O content script usa os seletores `.a3s.aiL` no Gmail e `.x_WordSection1` ou `[aria-label="Corpo da mensagem"]` no Outlook. A extração remove scripts, estilos, iframes, `footer` e alguns seletores de descadastro. A API faz uma segunda limpeza de HTML e URLs.
+---
 
-## Componentes existentes
+## Componentes Existentes
 
-| Camada | Implementação atual |
+| Camada | Implementação Atual |
 | --- | --- |
-| Manifesto | Chrome Manifest V3 com `sidePanel`, `storage`, `activeTab` e `tabs`. |
-| Content script | `src/content/`: extrai a mensagem, solicita a análise e injeta `<mark>` no HTML da mensagem. |
-| Service worker | `src/background/service-worker.ts`: faz cache local, chama a API, grava `current_analysis` e transmite o resultado às views abertas. |
-| Interface | React 19, TypeScript, Vite, Tailwind e Lucide. O side panel verifica a API, aciona extração, exibe análise real e envia feedback; há também um dashboard (`dashboard.html`). |
-| API | FastAPI com cache em memória e artefatos sklearn versionados; sem esses arquivos, usa heurísticas. |
+| **Manifesto** | Manifest V3 com compatibilidade dual para **Chrome** (`side_panel`) e **Firefox** (`sidebar_action`), permissões de `storage`, `activeTab`, `tabs` e hosts para `localhost` e `inimigos-do-prompt-api.onrender.com`. |
+| **Content script** | `src/content/`: extrai texto visível do Gmail (`.a3s.aiL`) e Outlook (`.x_WordSection1`), e aplica grifos nos termos relevantes. |
+| **Service worker** | `src/background/service-worker.ts`: gerencia cache local, despacha requisições à API com autenticação e sincroniza o estado via `current_analysis`. |
+| **Interface Frontend** | React 19, TypeScript, Vite, Tailwind CSS e Lucide Icons. Telas de autenticação (`Auth.tsx`), painel lateral (`App.tsx`) e dashboard completo (`Dashboard.tsx`). |
+| **Autenticação** | Cliente `@supabase/supabase-js` com adaptador de armazenamento customizado para `chrome.storage.local`. |
+| **Backend API** | FastAPI com injeção de dependência para verificação de JWT, padrão Strategy para seleção de modelo ML, cache em memória (`TTLCache`) e logging de feedback em JSONL. |
 
-Não há Zustand, Radix/shadcn, DOMPurify, SHAP nem LIME no código atual. A explicabilidade é feita por léxico: palavras alarmistas, texto em caixa alta e alguns padrões de clickbait.
+---
 
-## Estado do painel e do dashboard
+## Diagrama de Classes e Componentes da Extensão
 
-O resultado da análise real retorna ao content script para aplicar os grifos. O service worker também o transmite ao side panel e o grava como `current_analysis` no `chrome.storage.local`; o dashboard lê essa chave ao abrir. Assim, as duas interfaces exibem a mesma análise real, inclusive quando ela vem do cache.
+```mermaid
+classDiagram
+    class SupabaseAuthClient {
+        +supabase: SupabaseClient
+        +chromeStorage: StorageAdapter
+        +getSession()
+        +signInWithPassword()
+        +signUp()
+        +signOut()
+    }
 
-O botão da extensão abre o side panel por aba. O painel verifica `GET /health`, pode disparar nova extração na aba ativa e envia `confidence_slider` à API. O dashboard permite exportar o JSON carregado e envia `false_positive` para cada alegação reportada.
+    class ApiService {
+        +API_BASE_URL: string
+        +getAuthHeaders(): Promise
+        +checkHealth(): Promise~HealthResponse~
+        +analyzeText(payload): Promise~AnalyzeResponse~
+        +sendFeedback(payload): Promise~FeedbackResponse~
+    }
 
-## Limitações conhecidas
+    class ContentExtractor {
+        +extractEmailContent(): EmailPayload
+        +cleanHtmlText(html): string
+    }
 
-- A flag `hasAnalyzed` evita reanalisar a mesma página, mas pode impedir nova análise ao trocar de mensagem sem que o corpo desapareça do DOM.
-- O highlighter substitui `innerHTML`; isso é adequado apenas à PoC e pode afetar elementos ou listeners do webmail.
-- O content script e seus seletores estão limitados a Gmail e Outlook Live. Embora o manifesto declare uma permissão de host para Outlook na web, não há content script configurado para esse domínio.
-- A URL da API é fixa em `localhost`, portanto não há configuração de ambiente nem serviço remoto.
+    class ContentHighlighter {
+        +applyHighlights(terms): void
+        +clearHighlights(): void
+    }
 
-## Estrutura efetiva
+    class ServiceWorker {
+        +handleMessage(msg, sender, sendResponse)
+        +fetchFromApiOrCache(text): Promise
+        +broadcastResult(data): void
+    }
+
+    ApiService --> SupabaseAuthClient : Injeta JWT nos headers
+    ServiceWorker --> ApiService : Executa requisições
+    ContentExtractor --> ServiceWorker : ANALYZE_EMAIL
+    ContentHighlighter <-- ServiceWorker : Termos para grifar
+```
+
+---
+
+## Estrutura Efetiva do Código
 
 ```text
 extension/
 ├── manifest.json
-├── src/
-│   ├── background/service-worker.ts
-│   ├── content/{extractor,highlighter,index}.ts
-│   ├── dashboard/{Dashboard,main}.tsx
-│   ├── services/api.ts
-│   ├── types/index.ts
-│   ├── App.tsx
-│   └── main.tsx
-├── index.html
-└── dashboard.html
+├── index.html                 # Side panel
+├── dashboard.html             # Dashboard em aba completa
+├── vite.config.ts             # Configuração Vite multi-browser (Chrome & Firefox)
+└── src/
+    ├── App.tsx                # Interface principal do Side Panel
+    ├── Auth.tsx               # Componente de Login e Cadastro (Supabase)
+    ├── lib/
+    │   └── supabase.ts        # Inicialização do Supabase com chrome.storage
+    ├── background/
+    │   └── service-worker.ts  # Background worker, listeners e cache
+    ├── content/
+    │   ├── extractor.ts       # Seletores DOM Gmail/Outlook e sanitização
+    │   ├── highlighter.ts     # Injeção de grifos inline
+    │   └── index.ts           # Ponto de entrada do Content Script
+    ├── dashboard/
+    │   ├── Dashboard.tsx      # Dashboard analítico detalhado
+    │   └── main.tsx
+    ├── services/
+    │   └── api.ts             # Cliente HTTP com injeção de Bearer Token
+    └── types/
+        └── index.ts           # Interfaces TypeScript da aplicação
 ```

@@ -2,94 +2,236 @@
 title: Backend API
 ---
 
-O backend é uma API FastAPI para a PoC de análise de newsletters. Ele recebe o texto extraído pela extensão, produz uma classificação de hype e devolve termos e frases que justificam o resultado.
+O backend é uma API em FastAPI responsável pelo processamento de linguagem natural, análise de sensacionalismo (*hype*) e explicabilidade das newsletters. Ele adota uma arquitetura modular com o padrão de projeto **Strategy**, permitindo alternar de forma transparente entre inferência local, modelos em nuvem ou fallbacks heurísticos.
 
-## Estado do modelo
+---
 
-O `ModelLoader` suporta dois backends principais para a classificação de sensacionalismo:
+## Ciclo de Vida da Requisição (`/analyze`)
 
-1. **BERTimbau Fine-Tuned (Principal):**
-   * **Modelo:** `neuralmind/bert-base-portuguese-cased` ajustado finamente no dataset de newsletters tech.
-   * **Hospedagem:** Disponível publicamente no Hugging Face Hub em [gustant1/bertimbau-sensacionalismo](https://huggingface.co/gustant1/bertimbau-sensacionalismo).
-   * **Como rodar:** Ao configurar `MODEL_BACKEND=bertimbau` nas configurações/variáveis de ambiente, o backend utiliza a biblioteca `transformers` da Hugging Face para baixar e carregar os pesos diretamente do repositório remoto ou de uma pasta local baixada.
+```mermaid
+flowchart TD
+    Req["Requisição Cliente<br/>POST /api/v1/analyze"] --> Auth["Middleware de Autenticação<br/>(Validação do JWT Supabase)"]
+    Auth -->|Token Inválido ou Ausente| E401["401 Unauthorized / 500"]
+    Auth -->|Token Válido| CacheCheck{"Verifica Cache<br/>(TTLCache 500 itens / 1h)"}
+    
+    CacheCheck -->|Cache Hit| ResCache["Retorna Resposta Cacheadas"]
+    CacheCheck -->|Cache Miss| Clean["Pré-processamento<br/>(clean_text & extract_hype_features)"]
+    
+    Clean --> StrategyCtx["ClassifierContext<br/>(Executa Estratégia Ativa)"]
+    
+    subgraph Strategies["Estratégias de Inferência"]
+        StrategyCtx -.-> S_Gradio["GradioSpaceStrategy<br/>(gustant1-inimigos-prompt.hf.space)"]
+        StrategyCtx -.-> S_Bert["BertimbauLocalStrategy<br/>(PyTorch / Hugging Face Hub)"]
+        StrategyCtx -.-> S_Sklearn["SklearnStrategy<br/>(TF-IDF + joblib)"]
+        StrategyCtx -.-> S_Fall["FallbackStrategy<br/>(Regras Heurísticas)"]
+    end
+    
+    Strategies --> Score["Score de Sensacionalismo (1.0 a 5.0) & Rótulo"]
+    Score --> Explainer["Explainer Service<br/>(Destaque de Adjetivos, CAPS e Claims)"]
+    Explainer --> Format["Formatação AnalyzeResponse"]
+    Format --> SetCache["Armazena no TTLCache"]
+    SetCache --> Res["200 OK - Resposta Final"]
+```
 
-2. **Scikit-Learn Baseline (Fallback Local):**
-   * Carrega os artefatos `model.joblib` e `vectorizer.joblib` versionados em `backend/app/ml/artifacts/`.
-   * Vetorializa o texto com TF-IDF, calcula a probabilidade via `predict_proba` e aplica um ajuste heurístico ao score.
+---
 
-Se os artefatos estiverem ausentes ou a biblioteca do BERTimbau não for encontrada, o serviço utiliza um fallback heurístico puramente baseado em regras (caixa alta, densidade de exclamações e léxico alarmista).
+## Padrão Strategy para Inferência de ML
 
-## Rotas
+A camada de classificação desacopla a rota da tecnologia de machine learning utilizada através do padrão Strategy:
+
+```mermaid
+classDiagram
+    class ModelStrategy {
+        <<Protocol>>
+        +predict(text: str, features: dict) Tuple~str, float~
+    }
+
+    class ClassifierContext {
+        -strategy: ModelStrategy
+        +set_strategy(strategy: ModelStrategy)
+        +predict(text: str, features: dict) Tuple~str, float~
+    }
+
+    class BertimbauLocalStrategy {
+        -model: AutoModelForSequenceClassification
+        -tokenizer: AutoTokenizer
+        +predict(text: str, features: dict)
+    }
+
+    class SklearnStrategy {
+        -model: Classifier
+        -vectorizer: TfidfVectorizer
+        +predict(text: str, features: dict)
+    }
+
+    class HuggingFaceAPIStrategy {
+        -api_url: str
+        -headers: dict
+        +predict(text: str, features: dict)
+    }
+
+    class GradioSpaceStrategy {
+        -base_url: str
+        -api_name: str
+        +predict(text: str, features: dict)
+    }
+
+    class FallbackStrategy {
+        +predict(text: str, features: dict)
+    }
+
+    ModelStrategy <|.. BertimbauLocalStrategy
+    ModelStrategy <|.. SklearnStrategy
+    ModelStrategy <|.. HuggingFaceAPIStrategy
+    ModelStrategy <|.. GradioSpaceStrategy
+    ModelStrategy <|.. FallbackStrategy
+    ClassifierContext o-- ModelStrategy
+```
+
+### Backends Suportados
+
+A estratégia ativa é definida pela variável de ambiente `MODEL_BACKEND`:
+
+1. **`gradio_space` (Padrão em Produção / Render):**
+   * Conecta-se via REST ao Space Hugging Face em [`gustant1-inimigos-prompt.hf.space`](https://gustant1-inimigos-prompt.hf.space).
+   * Vantagem: Permite rodar o backend em contêineres leves (Render Free Tier) sem alocar 2GB+ de memória RAM para carregar PyTorch e pesos de transformers.
+
+2. **`bertimbau` (Inferência Local / Hub):**
+   * Utiliza a biblioteca `transformers` para carregar o modelo fine-tuned `neuralmind/bert-base-portuguese-cased` ([gustant1/bertimbau-sensacionalismo](https://huggingface.co/gustant1/bertimbau-sensacionalismo)).
+   * Requer instalação prévia de `pip install transformers torch`.
+
+3. **`sklearn` (Baseline Local):**
+   * Carrega os artefatos `backend/app/ml/artifacts/model.joblib` e `vectorizer.joblib`.
+   * Realiza inferência vetorial com TF-IDF e regressão logística.
+
+4. **`huggingface_api`:**
+   * Utiliza a Inference API oficial do Hugging Face via chamadas HTTP com token de autenticação.
+
+5. **`fallback`:**
+   * Utilizado automaticamente caso os modelos ou dependências não estejam acessíveis, aplicando heurísticas léxicas defensivas.
+
+---
+
+## Rotas da API
 
 ### `GET /health`
 
-Responde o estado do processo, o backend configurado e se o modelo foi carregado:
+Retorna o status da aplicação, se os modelos estão carregados e qual a estratégia ativa:
 
-```json
-{"status":"healthy","model_loaded":true,"model_backend":"sklearn"}
+```bash
+curl http://localhost:8000/health
 ```
-
-### `POST /api/v1/analyze`
-
-Entrada:
 
 ```json
 {
-  "email_id": "opcional",
+  "status": "healthy",
+  "model_loaded": true,
+  "model_backend": "gradio_space"
+}
+```
+
+---
+
+### `POST /api/v1/analyze` *(Protegida por Autenticação)*
+
+Analisa o texto de uma newsletter, gerando score de sensacionalismo, termos de destaque, alegações enfáticas e risco heurístico de desinformação.
+
+**Cabeçalhos:**
+* `Content-Type: application/json`
+* `Authorization: Bearer <token_jwt_supabase>`
+
+**Corpo da Requisição (Input):**
+```json
+{
+  "email_id": "opcional-uuid",
   "sender": "newsletter@exemplo.com",
-  "subject": "Assunto opcional",
-  "raw_text": "Texto ou HTML da newsletter"
+  "subject": "IA vai DESTRUIR todos os empregos?",
+  "raw_text": "URGENTE! Uma nova inteligência artificial revolucionária promete substituir 90% dos profissionais até o final do ano."
 }
 ```
 
-Saída:
-
+**Resposta (Output):**
 ```json
 {
-  "email_id": "uuid-gerado-ou-informado",
-  "sensationalism_score": 1.5,
-  "label": "Sóbrio",
-  "confidence": 0.95,
-  "highlighted_terms": [],
-  "disclaimer": "Os resultados são baseados em heurísticas. Analise criticamente.",
-  "disinformation_risk": 30,
-  "suspicious_claims": []
+  "email_id": "c1f72836-e093-4a17-b769-cf368d18e2be",
+  "sensationalism_score": 4.2,
+  "label": "Hype Elevado",
+  "confidence": 0.85,
+  "highlighted_terms": [
+    {
+      "term": "Urgente",
+      "weight": 0.6,
+      "category": "alarmist"
+    },
+    {
+      "term": "Revolucionária",
+      "weight": 0.6,
+      "category": "alarmist"
+    },
+    {
+      "term": "DESTRUIR",
+      "weight": 0.4,
+      "category": "hype"
+    }
+  ],
+  "disclaimer": "Mede o tom da linguagem (sensacionalismo), não a veracidade do conteúdo. Os padrões listados são heurísticas de apoio ao modelo.",
+  "disinformation_risk": 84,
+  "suspicious_claims": [
+    {
+      "claim": "URGENTE! Uma nova inteligência artificial revolucionária promete substituir 90% dos profissionais até o final do ano.",
+      "explanation": "Linguagem enfática (adjetivos extremos: 'urgente', 'revolucionária'; palavras em CAPS: 'DESTRUIR'; exclamação).",
+      "severity": "high"
+    }
+  ]
 }
 ```
 
-O score varia de 1 a 5 e o label é `Sóbrio`, `Hype Moderado` ou `Hype Elevado`. A confiança atual é um valor fixo condicionado ao score, não uma probabilidade calibrada. `disinformation_risk` é derivado do score e recebe um incremento se houver claim de severidade alta; não representa uma segunda predição independente.
+---
 
-### `POST /api/v1/feedback`
+### `POST /api/v1/feedback` *(Protegida por Autenticação)*
 
-Recebe `false_positive` ou `confidence_slider` e registra uma linha JSON no arquivo local `backend/feedback_log.jsonl`. `email_id` é obrigatório; `claim_index`, `slider_value` e `comment` são opcionais.
+Recebe avaliações de confiança do usuário (via slider) ou reporte de falsos positivos, persistindo em `backend/feedback_log.jsonl`.
 
+**Cabeçalhos:**
+* `Content-Type: application/json`
+* `Authorization: Bearer <token_jwt_supabase>`
+
+**Corpo da Requisição:**
 ```json
 {
-  "email_id": "id-da-analise",
+  "email_id": "c1f72836-e093-4a17-b769-cf368d18e2be",
   "feedback_type": "false_positive",
   "claim_index": 0,
-  "comment": "A alegação possui fonte verificável."
+  "comment": "O texto apenas cita um estudo acadêmico, não se trata de sensacionalismo."
 }
 ```
 
-O feedback não dispara retreinamento automático. A extensão chama essa rota: o side panel envia `confidence_slider`, e o dashboard envia `false_positive` ao reportar uma alegação. Os registros usam timestamp em UTC.
+---
 
-## Cache e limitações
+## Configuração do Ambiente (`.env`)
 
-A API mantém até 500 respostas em um `TTLCache` de uma hora. A chave usa somente os primeiros 200 caracteres do texto original; mensagens diferentes com o mesmo prefixo podem, portanto, compartilhar a resposta em cache. O objeto em cache também pode ter seu `email_id` substituído na próxima chamada.
+Crie o arquivo `backend/.env` baseado no exemplo `backend/.env.example`:
 
-O CORS aceita qualquer origem para facilitar o desenvolvimento da extensão. Antes de uma publicação, ele deve ser restringido ao identificador da extensão.
+```ini
+MODEL_BACKEND=gradio_space
+GRADIO_SPACE_URL=https://gustant1-inimigos-prompt.hf.space
+SUPABASE_JWT_SECRET=seu_jwt_secret_aqui
+```
+
+---
 
 ## Execução
 
+### Ambiente Virtual Local
 ```bash
 cd backend
+python3 -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements-api.txt
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Com Docker:
-
+### Docker
 ```bash
 cd backend
 docker compose up --build

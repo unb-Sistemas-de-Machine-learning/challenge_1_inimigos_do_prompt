@@ -1,41 +1,80 @@
-# Extensão Chrome — Inimigos do Prompt
+# Extensão Web — Inimigos do Prompt
 
-Extensão Chrome Manifest V3 da PoC. Ela observa mensagens abertas no Gmail e Outlook Live, extrai o texto visível e solicita uma análise à API FastAPI local.
+Extensão para navegadores baseada em Manifest V3 desenvolvida com React 19, TypeScript, Vite e Tailwind CSS. Observa newsletters abertas no Gmail e Outlook Live, extrai o conteúdo textual e consulta a API FastAPI para destacar trechos sensacionalistas e exibir a análise no painel lateral.
 
-## Desenvolvimento
+---
+
+## Fluxo de Execução da Extensão
+
+```mermaid
+sequenceDiagram
+    actor User as Usuário
+    participant DOM as Webmail DOM (Gmail/Outlook)
+    participant CS as Content Script
+    participant SW as Service Worker
+    participant Auth as Supabase Auth
+    participant API as FastAPI Backend
+    participant UI as Side Panel / Dashboard
+
+    User->>DOM: Abre newsletter
+    DOM->>CS: Mutação detectada no DOM
+    CS->>CS: Extrai e sanitiza texto
+    CS->>SW: Mensagem ANALYZE_EMAIL
+    SW->>Auth: Recupera JWT da sessão ativa
+    SW->>API: POST /api/v1/analyze (Bearer JWT)
+    API-->>SW: Score, termos e alegações
+    SW->>SW: Grava no chrome.storage (current_analysis)
+    SW-->>CS: Termos para destaque
+    CS->>DOM: Injeta grifos inline (<mark>)
+    SW-->>UI: Dispara evento com resultado
+    UI->>User: Exibe métricas, risco e explicação
+```
+
+---
+
+## Desenvolvimento e Compilação
+
+Instale as dependências:
 
 ```bash
 npm install
+```
+
+Crie o arquivo de configuração local a partir do modelo:
+
+```bash
+cp .env.example .env
+```
+
+Preencha as credenciais do seu projeto Supabase no `.env` (`VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`). Opcionalmente, defina `VITE_API_URL` se o backend não estiver rodando no padrão `http://localhost:8000`.
+
+### Modo Desenvolvimento (Vite)
+
+```bash
 npm run dev
 ```
 
-O servidor Vite usa a porta `5173`. Para produzir a extensão carregável pelo Chrome:
+### Compilação de Produção
 
-```bash
-npm run build
-```
+- **Para Google Chrome:**
+  ```bash
+  npm run build:chrome
+  ```
+  Os arquivos compilados são gerados em `extension/dist-chrome/`. Acesse `chrome://extensions`, ative o **Modo do desenvolvedor** e clique em **Carregar sem compactação**, selecionando `extension/dist-chrome`.
 
-Em `chrome://extensions`, ative o modo de desenvolvedor e use **Carregar sem compactação** para selecionar `dist/`.
+- **Para Mozilla Firefox:**
+  ```bash
+  npm run build:firefox
+  ```
+  Os arquivos compilados são gerados em `extension/dist-firefox/`. Acesse `about:debugging#/runtime/this-firefox`, clique em **Carregar extensão temporária** e aponte para `extension/dist-firefox/manifest.json`.
 
-## Dependência da API
+---
 
-O endpoint está fixo em `http://localhost:8000/api/v1/analyze`. Antes de testar a extensão, inicie a API a partir de `../backend`:
+## Comunicação com o Backend
 
-```bash
-pip install -r requirements-api.txt
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
+A extensão envia as requisições autenticadas para:
+* `POST /api/v1/analyze`: Análise textual de newsletters.
+* `POST /api/v1/feedback`: Envio de ajustes no slider de sensibilidade ou reporte de falsos positivos.
+* `GET /health`: Monitoramento de conectividade com a API.
 
-O manifesto injeta o content script no Gmail e no Outlook Live. Ele também declara permissões para `localhost`, `127.0.0.1` e Outlook na web; a URL usada pela API permanece fixa em `http://localhost:8000`.
-
-A API carrega, por padrão, os artefatos sklearn versionados em `../backend/app/ml/artifacts/`. Se esses arquivos não estiverem disponíveis, o backend mantém um fallback heurístico.
-
-## Limitações atuais
-
-- A resposta real destaca termos no webmail, atualiza o side panel e é salva como `current_analysis` para o dashboard.
-- O painel consulta `GET /health`, pode solicitar uma nova extração na aba ativa e oferece exemplos de hype e texto sóbrio que chamam a API real.
-- A confirmação do slider envia `confidence_slider` e o dashboard envia `false_positive` para `POST /api/v1/feedback`.
-- A aplicação dos destaques substitui `innerHTML`, abordagem limitada à demonstração.
-- A análise automática ainda é iniciada uma única vez por ciclo de DOM; uma troca de mensagem sem remover o corpo pode não ser detectada.
-
-Veja a [documentação da extensão](../website/src/content/docs/extensao_frontend.md) e o [guia de execução integrada](../website/src/content/docs/execucao_poc_api.md) para detalhes.
+Todas as chamadas para rotas protegidas injetam automaticamente o token JWT retornado pelo Supabase no cabeçalho `Authorization: Bearer <token>`.

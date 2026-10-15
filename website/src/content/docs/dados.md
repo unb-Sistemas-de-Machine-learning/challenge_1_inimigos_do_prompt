@@ -4,6 +4,79 @@ title: Coleta e Preparação de Dados
 
 Esta página descreve o pipeline que existe hoje no diretório `src/`. Os arquivos em `data/` são gerados localmente, não fazem parte do repositório e precisam ser produzidos antes do treinamento.
 
+## Fluxograma do Pipeline de Dados
+
+```mermaid
+flowchart TD
+    subgraph Fontes["Fontes Externas"]
+        F1["Fake.br-Corpus (GitHub)"]
+        F2["FactChecks.br (Hugging Face)"]
+        F3["Web Scraping (G1 / Manual do Usuário)"]
+        F4["Web Scraping (Boatos.org)"]
+    end
+
+    subgraph Scripts["Processamento & Normalização"]
+        S1["build_sensacionalismo_dataset.py"]
+        S2["build_claims_dataset.py"]
+        S3["scraper_tech_news.py"]
+        S4["scraper_fake_news.py"]
+        S5["generate_sample_dataset.py"]
+    end
+
+    subgraph Datasets["Datasets Gerados (data/)"]
+        D1[("dataset_sensacionalismo.csv")]
+        D2[("dataset_claims.csv")]
+        D3[("tech_news.csv")]
+        D4[("scraped_fake_news.csv")]
+        D5[("dataset_hype_treino.csv")]
+    end
+
+    subgraph Merge["Consolidação & Split"]
+        M1["merge_datasets.py"]
+        DF[("dataset_final_treino.csv")]
+        TR[("train.csv (80%)")]
+        TE[("test.csv (20%)")]
+    end
+
+    subgraph Treino["Consumo em Modelagem"]
+        TB["train_baseline.py<br/>(TF-IDF + Naive Bayes / RegLog)"]
+        BT["Fine-Tuning BERTimbau<br/>(neuralmind/bert-base-portuguese-cased)"]
+    end
+
+    F1 --> S1 --> D1
+    F2 --> S2 --> D2
+    F3 --> S3 --> D3
+    F4 --> S4 --> D4
+    S5 --> D5
+
+    D1 & D5 --> M1
+    M1 --> DF --> TR & TE
+    TR & TE --> TB
+    TR & TE --> BT
+```
+
+---
+
+## Estrutura e Transformação dos Registros
+
+```mermaid
+flowchart LR
+    Raw["Texto Bruto / Notícia"] --> Clean["Sanitização Regex & HTML"]
+    Clean --> Feat["Extração de Sinais Linguísticos"]
+    
+    subgraph Sinais["Features Heurísticas"]
+        Feat --> F1["uppercase_words_percentage"]
+        Feat --> F2["exclamation_density"]
+        Feat --> F3["extreme_adjectives_count"]
+    end
+
+    Clean --> Label["Mapeamento de Classes"]
+    Label --> L1["0: Sóbrio"]
+    Label --> L2["1: Sensacionalista"]
+```
+
+---
+
 ## Fontes e saídas atuais
 
 | Script | Fonte | Saída | Uso atual |
