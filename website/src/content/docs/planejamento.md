@@ -3,6 +3,47 @@ title: Planejamento do Projeto
 ---
 Abaixo estão as diretrizes estratégicas e operacionais do projeto, organizadas através das **6 Guiding Questions** de Sistemas de Machine Learning. Elas representam o planejamento e não devem ser lidas como funcionalidades já entregues; o estado atual está documentado nas páginas de dados, arquitetura e API.
 
+## Roadmap Estratégico das 6 Guiding Questions
+
+```mermaid
+flowchart TD
+    Q1["1. Aquisição de Dados<br/>(Scraping & Coleta)"] --> Q2["2. Processamento & Ruído<br/>(Sanitização Regex & HTML)"]
+    Q2 --> Q4["4. Modelagem & Baselines<br/>(TF-IDF vs BERTimbau / F-0.5)"]
+    Q2 --> Q3["3. UX & Interpretabilidade<br/>(Extensão Web & Destaques)"]
+    Q4 --> Q5["5. Arquitetura & Deploy<br/>(FastAPI / Strategy / Cloud)"]
+    Q3 --> Q5
+    Q5 --> Q6["6. Ética, Feedback & Danos<br/>(Disclaimer & Reporte de Falso Positivo)"]
+```
+
+---
+
+## Interdependência de Entregas e Matriz de Trabalho
+
+```mermaid
+flowchart LR
+    subgraph Dados["Frente de Dados (M1 & M2)"]
+        D1["Scraping & Coleta"] --> D2["Sanitização & Regex"]
+        D2 --> D3["Datasets de Treino"]
+    end
+
+    subgraph ML["Frente de Modelagem (M4)"]
+        D3 --> M1["Baseline Sklearn"]
+        D3 --> M2["Fine-Tuning BERTimbau"]
+        M1 & M2 --> M3["Avaliação F-0.5 Score"]
+    end
+
+    subgraph UX_DevOps["Frente de UX & Engenharia (M3 & M5)"]
+        M3 --> E1["Backend FastAPI Modular"]
+        U1["Design UI Extensão"] --> U2["Content Script & Side Panel"]
+        E1 & U2 --> E2["Integração Ponta a Ponta"]
+    end
+
+    subgraph Etica["Frente Ética & Feedback (M1 & M2)"]
+        E2 --> F1["Canal de Feedback & Slider"]
+        F1 --> F2["Mitigação de Danos"]
+    end
+```
+
 ---
 
 ## As 6 Guiding Questions Refatoradas

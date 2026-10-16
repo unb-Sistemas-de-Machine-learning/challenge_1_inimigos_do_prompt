@@ -21,7 +21,22 @@ Este projeto é desenvolvido para a disciplina de **Sistemas de Machine Learning
 Nossa missão é combater o sensacionalismo e a desinformação no consumo de notícias técnicas e newsletters de tecnologia por meio de inteligência artificial aplicada.
 
 > [!IMPORTANT]
-> A implementação disponível é uma PoC local. Ela analisa mensagens abertas no Gmail e Outlook Live com artefatos sklearn versionados, destaca termos no webmail e apresenta a análise no side panel e dashboard. O risco de desinformação continua heurístico: não há uma segunda predição independente nem fact-checking em tempo real.
+> A implementação atual é uma PoC integrada entre extensão de navegador (Chrome e Firefox), API FastAPI e autenticação via Supabase. O backend suporta múltiplos modelos de inferência (baseline scikit-learn, BERTimbau fine-tuned e Hugging Face Space), destacando termos sensacionalistas no webmail e apresentando a análise no side panel e dashboard.
+
+---
+
+## Visão Geral da Solução
+
+```mermaid
+flowchart LR
+    A["Leitor no Webmail<br/>(Gmail / Outlook)"] -->|Lê newsletter| B["Extensão Web<br/>(Chrome / Firefox)"]
+    B -->|Extrai texto & envia JWT| C["Backend FastAPI<br/>(Padrão Strategy)"]
+    C -->|Classifica Tom & Hype| D["Modelos de ML<br/>(BERTimbau / Sklearn / HF)"]
+    D -->|Score de Sensacionalismo| C
+    C -->|Termos & Alertas| B
+    B -->|Grifos Visuais & Painel| A
+    A -->|Feedback no Slider| C
+```
 
 ---
 

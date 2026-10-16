@@ -1,56 +1,118 @@
 ---
-title: Autenticação, Refatoração e Deploy
-description: Documentação das etapas de implementação de autenticação, refatoração do backend usando o padrão Strategy e deploy utilizando o Hugging Face.
+title: Autenticação, Refatoração e Deploy em Nuvem
+description: Documentação detalhada dos fluxos de autenticação Supabase, padrão Strategy e arquitetura de deploy em produção.
 ---
 
-Esta documentação detalha o plano de implementação executado para integrar o sistema de autenticação, refatorar o processamento de inferência e realizar a integração na nuvem.
+Esta documentação detalha a arquitetura de segurança, o fluxo de tokens JWT com o Supabase, a refatoração do motor de inferência via padrão Strategy e a topologia de deploy em nuvem.
 
-## Fase 1: Escolha do Provedor de Autenticação (Supabase)
+---
 
-A primeira etapa consistiu em definir como gerenciaríamos a identidade dos usuários de forma segura. Em vez de implementar e manter um sistema de gerenciamento de senhas próprio, a escolha foi o **Supabase**, que oferece uma solução de autenticação robusta como serviço (BaaS).
+## Fluxo Completo de Autenticação e Sessão (Supabase)
 
-Com isso, garantimos um fluxo seguro de login, delegando a responsabilidade de criação de contas, validação e geração de tokens JWT ao provedor. Nossa aplicação e banco de dados se mantêm mais enxutos e focados no negócio principal.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Usuário
+    participant UI as Extensão / Web Frontend
+    participant Storage as chrome.storage.local
+    participant Supabase as Supabase Auth (BaaS)
+    participant Backend as FastAPI Backend
 
-## Fase 2: Integração com o Frontend (Astro/Extensão)
+    User->>UI: Informa e-mail e senha
+    UI->>Supabase: signInWithPassword({ email, password })
+    Supabase-->>UI: Retorna Session com access_token (JWT)
+    UI->>Storage: Persiste sessão no chromeStorage adapter
+    
+    Note over User, UI: Leitura de Newsletter no Gmail / Outlook
+    UI->>Storage: Recupera access_token ativo
+    UI->>Backend: POST /api/v1/analyze com Header Authorization: Bearer JWT
+    
+    Backend->>Backend: get_current_user extrai e valida payload do JWT
+    alt Token Inválido ou Expirado
+        Backend-->>UI: 401 Unauthorized
+        UI->>User: Exibe tela de login / renovação de sessão
+    else Token Válido
+        Backend->>Backend: Executa inferência via Strategy e Explainer
+        Backend-->>UI: 200 OK com análise completa
+    end
+```
 
-Na segunda fase, integramos o provedor de autenticação com a nossa interface web frontend e a extensão de navegador.
+---
 
-O fluxo de configuração consistiu em:
-- Implementar a biblioteca cliente do Supabase na interface.
-- Criar os componentes e telas de Login e Cadastro.
-- Salvar e manter a sessão ativa utilizando persistência. No contexto da extensão, aplicamos um adaptador customizado usando `chrome.storage.local` para manter os tokens compatíveis com o formato exigido pelo Manifest V3.
-- Em cada requisição de análise, o frontend obtém o token JWT ativo da sessão e o prepara para ser enviado ao backend.
+## Topologia de Deploy e Integração em Nuvem
 
-## Fase 3: Proteção do Backend (FastAPI)
+```mermaid
+flowchart TB
+    subgraph Client["Camada de Cliente"]
+        ExtChrome["Extensão Google Chrome<br/>(dist-chrome)"]
+        ExtFF["Extensão Mozilla Firefox<br/>(dist-firefox)"]
+        Portal["Portal Documentação<br/>(GitHub Pages / Astro Starlight)"]
+    end
 
-O nosso Backend em **FastAPI** foi arquitetado de forma a não armazenar nem gerenciar senhas ativamente. Ele atua apenas verificando a legitimidade do JWT gerado pelo frontend.
+    subgraph AuthProvider["Serviço de Identidade"]
+        SB["Supabase Auth Cloud<br/>(Gerenciamento de Usuários & Emissão JWT)"]
+    end
 
-O fluxo de proteção de rota funciona da seguinte maneira:
-- O frontend envia a requisição (ex: pedido de análise de sensacionalismo) com o token no cabeçalho `Authorization: Bearer <token>`.
-- O FastAPI extrai este JWT e realiza a verificação de integridade e assinatura para atestar que o token foi emitido pelo Supabase do nosso projeto.
-- Se o token for válido e não estiver expirado, o acesso à rota é liberado e a requisição é processada. Caso contrário, um erro 401 é retornado.
+    subgraph BackendHost["Hospedagem da API (Render)"]
+        DockerAPI["FastAPI em Contêiner Docker<br/>(inimigos-do-prompt-api.onrender.com)<br/>MODEL_BACKEND=gradio_space"]
+    end
 
-## Fase 4: Refatoração com o Padrão Strategy
+    subgraph MLCloud["Hospedagem de Modelos (Hugging Face)"]
+        HFSpace["Hugging Face Space (Gradio)<br/>(gustant1-inimigos-prompt.hf.space)"]
+        HFHub["Hugging Face Hub (Model Weights)<br/>(gustant1/bertimbau-sensacionalismo)"]
+    end
 
-Para tornar o processamento de Machine Learning modular e preparado para integrações externas, aplicamos o **Padrão Strategy** (Strategy Pattern) na camada de inferência do backend.
+    Client <-->|Autenticação & Tokens| SB
+    ExtChrome & ExtFF -->|Chamadas REST com Bearer Token| DockerAPI
+    DockerAPI <-->|REST API / Predict Call| HFSpace
+    HFSpace -.->|Baixa pesos finetunados| HFHub
+```
 
-As principais mudanças foram:
-- **Organização das Partes dos Modelos**: Isolamos o código existente responsável pela análise, separando implementações e definindo contratos claros.
-- **Criação de Interface Base**: Definimos uma estratégia base que obriga toda classe de modelo a implementar um método padronizado para retornar a análise do texto.
-- **Estratégia Hugging Face**: Criamos uma estratégia específica que conecta o nosso sistema com a nuvem do Hugging Face. Essa classe carrega a chave de API do provedor (armazenada em `.env`), monta a requisição (payload), envia para o servidor externo e converte o retorno para o padrão que a nossa aplicação espera.
+---
 
-Essa estrutura nos permite alterar provedores ou voltar para um modelo local sem afetar as lógicas das rotas (endpoints).
+## Fase 1: Provedor de Autenticação (Supabase)
 
-## Fase 5: Deploy e Integração no Hugging Face
+Adotou-se o **Supabase** como Backend-as-a-Service (BaaS) para autenticação, eliminando o risco e a complexidade de armazenamento manual de senhas e hashing criptográfico:
 
-A quinta e última fase consolidou todo o fluxo usando a integração do modelo com a API de Inferência do Hugging Face, efetuando o deploy da solução de inferência.
+- **Controle de Acesso:** Usuários realizam cadastro e login utilizando e-mail e senha.
+- **Tokens Padronizados:** Emissão de tokens JWT assinados via algoritmo HMAC-SHA256 contendo informações de usuário (`sub`, `email`, `exp`).
 
-A arquitetura refatorada estabelece a seguinte jornada da requisição (do clique do usuário até a exibição do resultado):
+---
 
-1. **Autenticação**: O usuário realiza o login pelo Site/Extensão e o Supabase valida, retornando um JWT autêntico.
-2. **Requisição Segura**: O Site/Extensão envia o texto da newsletter para a API do nosso Backend, passando o JWT no cabeçalho.
-3. **Validação**: O Backend recebe a chamada e atesta que o JWT é válido.
-4. **Aplicação da Estratégia**: Após liberar o acesso, o Backend aciona a estratégia configurada (Hugging Face Strategy).
-5. **Processamento Externo**: A classe injeta a chave de API (do `.env`) e encaminha o texto para ser inferido na nuvem do Hugging Face.
-6. **Retorno do Modelo**: A API do Hugging Face analisa o texto, identifica padrões de sensacionalismo e devolve a resposta para o nosso Backend.
-7. **Resposta ao Cliente**: O Backend normaliza esse resultado e despacha para o Frontend, que exibe os indicadores de forma visual na tela do usuário.
+## Fase 2: Integração com o Frontend (Extensão Web)
+
+No contexto de extensões Manifest V3, o `localStorage` tradicional pode não estar disponível em todos os contextos de execução (ex: Service Workers isolados). 
+
+Para contornar essa restrição, foi desenvolvido um adaptador customizado (`chromeStorage`) em `extension/src/lib/supabase.ts`, implementando a interface `SupportedStorage` da biblioteca `@supabase/supabase-js` através das APIs nativas `chrome.storage.local`.
+
+---
+
+## Fase 3: Proteção de Rotas no FastAPI
+
+O backend valida as requisições através do módulo `app/services/auth.py`, utilizando a injeção de dependência `Depends(get_current_user)` do FastAPI:
+
+1. O cabeçalho `Authorization: Bearer <token>` é extraído pela classe `HTTPBearer`.
+2. A aplicação verifica a presença de `SUPABASE_JWT_SECRET` nas configurações.
+3. Decodifica o payload e confere o tempo de expiração (`exp`), rejeitando requisições inválidas ou expiradas com status `401 Unauthorized`.
+
+---
+
+## Fase 4: Padrão Strategy na Inferência
+
+Para desacoplar a camada de API dos modelos de Machine Learning, implementou-se o padrão **Strategy**:
+
+- **Interface Abstrata (`ModelStrategy`):** Exige a implementação do método `predict(text: str, features: dict) -> Tuple[str, float]`.
+- **Implementações Intercambiáveis:**
+  * `GradioSpaceStrategy`: Delega o processamento pesado de linguagem natural para o Hugging Face Space.
+  * `BertimbauLocalStrategy`: Executa BERTimbau localmente via PyTorch / Transformers.
+  * `SklearnStrategy`: Executa o classificador baseline scikit-learn.
+  * `FallbackStrategy`: Heurística baseada em regras léxicas em caso de indisponibilidade de rede.
+
+---
+
+## Fase 5: Topologia de Produção no Render e Hugging Face
+
+Para disponibilizar a solução sem custos de infraestrutura e contornar os limites de memória RAM dos planos gratuitos:
+
+1. **Backend no Render:** O repositório possui o arquivo [`render.yaml`](file:///e:/challenge_1_inimigos_do_prompt/render.yaml), que provisiona um contêiner Docker leve rodando a API FastAPI com `MODEL_BACKEND="gradio_space"`.
+2. **Inferência no Hugging Face:** O modelo BERTimbau ajustado finamente executa em um Space dedicado com Gradio, expondo o endpoint `/predict` consumido pelo backend.
