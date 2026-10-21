@@ -1,11 +1,15 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import mermaid from 'astro-mermaid';
 
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://unb-sistemas-de-machine-learning.github.io',
 	base: '/challenge_1_inimigos_do_prompt',
 	integrations: [
+		mermaid({
+			autoTheme: true,
+		}),
 		starlight({
 			title: 'Inimigos do Prompt',
 			favicon: '/favicon.png',
