@@ -3,6 +3,7 @@ import { AnalyzeResponse } from './types';
 import { sendFeedback, checkHealth } from './services/api';
 import { supabase } from './lib/supabase';
 import { Auth } from './Auth';
+import { MascotHero } from './components/MascotHero';
 import { 
   AlertTriangle, 
   CheckCircle2, 
@@ -14,16 +15,78 @@ import {
 } from 'lucide-react';
 
 function App() {
-  const [session, setSession] = useState<any>(null);
-  const [data, setData] = useState<AnalyzeResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [session, setSession] = useState<any>(() => {
+    if (typeof window !== 'undefined' && window.location.search.includes('mock')) {
+      return { user: { email: 'gustavo@exemplo.com' } };
+    }
+    return null;
+  });
+
+  const [data, setData] = useState<AnalyzeResponse | null>(() => {
+    if (typeof window !== 'undefined') {
+      if (window.location.search.includes('mock=hype')) {
+        return {
+          email_id: 'newsletter-tech-hype-01',
+          sensationalism_score: 4.3,
+          label: 'Hype Elevado',
+          confidence: 0.94,
+          highlighted_terms: [
+            { term: 'revolução definitiva', weight: 0.92, category: 'hype' },
+            { term: '100x mais rápido', weight: 0.85, category: 'sensationalist' },
+            { term: 'substituir todos', weight: 0.78, category: 'alarmist' },
+            { term: 'imperdível', weight: 0.65, category: 'clickbait' }
+          ],
+          disinformation_risk: 74,
+          suspicious_claims: [
+            {
+              claim: 'Nova IA torna todos os desenvolvedores obsoletos em 30 dias',
+              explanation: 'Alegação hiperbólica sem validação empírica ou fontes acadêmicas citadas.',
+              severity: 'high'
+            },
+            {
+              claim: 'Garante rendimento de 500% sem esforço',
+              explanation: 'Gatilho típico de clickbait tecnológico.',
+              severity: 'high'
+            }
+          ],
+          disclaimer: 'Relatório gerado pelo modelo BERTimbau / Inimigos do Prompt para fins de leitura crítica.'
+        };
+      } else if (window.location.search.includes('mock=sober')) {
+        return {
+          email_id: 'newsletter-tech-sober-02',
+          sensationalism_score: 1.6,
+          label: 'Sóbrio',
+          confidence: 0.91,
+          highlighted_terms: [],
+          disinformation_risk: 10,
+          suspicious_claims: [],
+          disclaimer: 'Relatório gerado pelo modelo BERTimbau / Inimigos do Prompt para fins de leitura crítica.'
+        };
+      }
+    }
+    return null;
+  });
+
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && window.location.search.includes('mock=loading')) {
+      return true;
+    }
+    return false;
+  });
+
   const [error, setError] = useState<string | null>(null);
   
   // Backend health status
-  const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
-  const [backendBackend, setBackendBackend] = useState<string>('sklearn');
+  const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('online');
+  const [backendBackend, setBackendBackend] = useState<string>('bertimbau');
 
-  // Slider State
+  // Progressive disclosure state
+  const [showMetrics, setShowMetrics] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && window.location.search.includes('metrics=true')) {
+      return true;
+    }
+    return false;
+  });
   const [sliderValue, setSliderValue] = useState<number>(50);
   const [hasInteracted, setHasInteracted] = useState<boolean>(false);
   const [feedbackSending, setFeedbackSending] = useState<boolean>(false);
@@ -44,6 +107,56 @@ function App() {
   }, []);
 
   useEffect(() => {
+    // Permite testar e pré-visualizar a extensão no navegador com ?mock=...
+    if (typeof window !== 'undefined' && window.location.search.includes('mock')) {
+      setSession({ user: { email: 'gustavo@exemplo.com' } });
+      setBackendStatus('online');
+      
+      if (window.location.search.includes('mock=hype')) {
+        setData({
+          email_id: 'newsletter-tech-hype-01',
+          sensationalism_score: 4.3,
+          label: 'Hype Elevado',
+          confidence: 0.94,
+          highlighted_terms: [
+            { term: 'revolução definitiva', weight: 0.92, category: 'hype' },
+            { term: '100x mais rápido', weight: 0.85, category: 'sensationalist' },
+            { term: 'substituir todos', weight: 0.78, category: 'alarmist' },
+            { term: 'imperdível', weight: 0.65, category: 'clickbait' }
+          ],
+          disinformation_risk: 74,
+          suspicious_claims: [
+            {
+              claim: 'Nova IA torna todos os desenvolvedores obsoletos em 30 dias',
+              explanation: 'Alegação hiperbólica sem validação empírica ou fontes acadêmicas citadas.',
+              severity: 'high'
+            },
+            {
+              claim: 'Garante rendimento de 500% sem esforço',
+              explanation: 'Gatilho típico de clickbait tecnológico.',
+              severity: 'high'
+            }
+          ],
+          disclaimer: 'Relatório gerado pelo modelo BERTimbau / Inimigos do Prompt para fins de leitura crítica.'
+        });
+        if (window.location.search.includes('metrics=true')) {
+          setShowMetrics(true);
+        }
+      } else if (window.location.search.includes('mock=sober')) {
+        setData({
+          email_id: 'newsletter-tech-sober-02',
+          sensationalism_score: 1.6,
+          label: 'Sóbrio',
+          confidence: 0.91,
+          highlighted_terms: [],
+          disinformation_risk: 10,
+          suspicious_claims: [],
+          disclaimer: 'Relatório gerado pelo modelo BERTimbau / Inimigos do Prompt para fins de leitura crítica.'
+        });
+      }
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
@@ -211,12 +324,15 @@ function App() {
         </div>
       </header>
 
-      {/* Loading State */}
+      {/* Loading State with Mascot */}
       {loading && (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-3">
-          <Loader2 className="h-9 w-9 text-indigo-600 animate-spin" />
-          <p className="font-bold text-sm text-gray-700">Analisando conteúdo da newsletter...</p>
-          <p className="text-xs text-gray-400">Consultando o modelo de Machine Learning e extraindo termos suspeitos</p>
+        <div className="p-3 space-y-3 flex-1 flex flex-col justify-center">
+          <MascotHero 
+            data={null} 
+            loading={true} 
+            showMetrics={false} 
+            onToggleMetrics={() => {}} 
+          />
         </div>
       )}
 
@@ -237,14 +353,19 @@ function App() {
         </div>
       )}
 
-      {/* Empty State / Welcome Screen */}
-      {!data && !loading && (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-6">
-          <div className="space-y-4 flex flex-col items-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-2"></div>
-            <p className="font-semibold text-gray-700">Aguardando e-mail...</p>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              Por favor, abra a extensão <strong>antes</strong> de entrar no e-mail no Gmail ou Outlook.
+      {/* Empty State / Welcome Screen with Mascot */}
+      {!data && !loading && !error && (
+        <div className="p-3 space-y-3 flex-1 flex flex-col justify-center">
+          <MascotHero 
+            data={null} 
+            loading={false} 
+            showMetrics={false} 
+            onToggleMetrics={() => {}} 
+          />
+          <div className="bg-white/80 border border-gray-200 rounded-xl p-3 text-center space-y-1 text-xs text-gray-500 shadow-2xs">
+            <p className="font-semibold text-gray-700">Dica do Farejador:</p>
+            <p className="text-[11px] leading-relaxed">
+              Abra uma mensagem no <strong>Gmail</strong> ou <strong>Outlook</strong> para iniciar a análise em tempo real.
             </p>
           </div>
         </div>
@@ -267,8 +388,19 @@ function App() {
             </button>
           </div>
 
-          {/* Sensationalism Card */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          {/* Primary View: Mascot Hero & Speech Bubble */}
+          <MascotHero 
+            data={data} 
+            loading={false} 
+            showMetrics={showMetrics} 
+            onToggleMetrics={() => setShowMetrics(prev => !prev)} 
+          />
+
+          {/* Secondary View: Metrics & Indicators (Visible when showMetrics is true) */}
+          {showMetrics ? (
+            <div className="space-y-3 transition-all duration-300">
+              {/* Sensationalism Card */}
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-[13px] font-bold text-gray-800">
                 Análise de Sensacionalismo
@@ -488,6 +620,30 @@ function App() {
               </button>
             </div>
           </div>
+        </div>
+      ) : (
+        /* Compact Summary Card when metrics are collapsed */
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 p-3.5 space-y-3">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-gray-600">Risco de Desinformação:</span>
+            <span className={`font-bold px-2 py-0.5 rounded text-[11px] ${
+              data.disinformation_risk > 50 ? 'bg-rose-100 text-rose-700' :
+              data.disinformation_risk > 25 ? 'bg-amber-100 text-amber-700' :
+              'bg-emerald-100 text-emerald-700'
+            }`}>
+              {data.disinformation_risk}% Risco ({data.suspicious_claims?.length || 0} alegações)
+            </span>
+          </div>
+
+          <button 
+            onClick={openDashboard}
+            className="w-full bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 text-xs font-bold py-2.5 px-3 rounded-xl transition-all border border-indigo-200/80 flex items-center justify-center gap-1.5"
+          >
+            <span>Abrir Relatório Completo no Painel</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
           <footer className="text-[10px] text-gray-400 text-center py-2 px-3 leading-tight">
             {data.disclaimer}

@@ -83,10 +83,38 @@ stateDiagram-v2
 
 - **Detecção e Extração Automática:** Monitora as abas do Gmail (`mail.google.com`) e Outlook Live (`outlook.live.com`), isolando o conteúdo de newsletters e descartando rodapés, menus e rastreadores.
 - **Autenticação Integrada:** Telas completas de Login e Cadastro conectadas ao Supabase, gerenciando tokens JWT com persistência segura no `chrome.storage.local`.
+- **Mascote Farejador (XAI & Nudge Cognitivo):** Personificação visual que humaniza o resultado da IA através do mascote farejador com balões de diálogo reativos em linguagem natural (`Sóbrio`, `Hype Moderado` e `Hype Elevado`) e pílulas com termos críticos detectados.
+- **Divulgação Progressiva (Progressive Disclosure):** Interface limpa para consumo rápido, mantendo velocímetro (1 a 5), pesos matemáticos dos termos e slider de feedback recolhidos sob demanda.
 - **Destaque Visual de Tom (Highlighter):** Grifa no próprio corpo da mensagem os termos que mais contribuíram para o score de sensacionalismo.
-- **Painel Lateral com Diagnóstico:** Exibe status da API, termômetro de hype (1 a 5), alegações enfáticas, slider de confiança calibrável e atalho para análise manual.
-- **Dashboard Abrangente:** Tela em aba dedicada (`dashboard.html`) para inspecionar métricas linguísticas, dados da análise e exportação em formato JSON.
+- **Painel Lateral com Diagnóstico:** Exibe status da API, risco de desinformação, alegações suspeitas e atalho para o dashboard completo.
+- **Dashboard Abrangente:** Tela em aba dedicada (`dashboard.html`) para inspecionar métricas linguísticas, contestar alegações e exportar relatórios em formato JSON.
 - **Suporte Multi-Navegador:** Compilação nativa para **Chrome** (`side_panel`) e **Firefox** (`sidebar_action`).
+
+---
+
+## Galeria de Telas da Extensão
+
+### 1. Mascote Farejador em Alerta de Hype Máximo
+Na visão padrão, o mascote expressa o veredito crítico em linguagem natural, apontando os termos de maior peso linguístico detectados (`"revolução definitiva"`, `"100x mais rápido"`), mantendo as métricas densas recolhidas:
+
+<p align="center">
+  <img src="/challenge_1_inimigos_do_prompt/images/print_mascote_1_alerta_hype.png" alt="Mascote Farejador em Alerta de Hype" width="380" />
+</p>
+
+### 2. Métricas Expandidas sob Demanda (Progressive Disclosure)
+Ao clicar em **Exibir Métricas Numéricas e Gráficos**, a gaveta retrátil se abre exibindo o velocímetro de sensacionalismo (1.0 a 5.0), a barra de pesos de features do modelo e o slider calibrador de confiança:
+
+<p align="center">
+  <img src="/challenge_1_inimigos_do_prompt/images/print_mascote_2_metricas_expandidas.png" alt="Métricas e Indicadores Expandidos" width="380" />
+</p>
+
+### 3. Mascote em Estado Sóbrio e Estado de Espera
+Quando o texto é pé no chão e sem promessas vazias, o mascote aprova a leitura. Em abas sem newsletter ativa, ele orienta o usuário de forma amigável:
+
+<p align="center">
+  <img src="/challenge_1_inimigos_do_prompt/images/print_mascote_3_sobrio.png" alt="Mascote em Estado Sóbrio" width="380" style="margin-right: 12px;" />
+  <img src="/challenge_1_inimigos_do_prompt/images/print_mascote_4_aguardando.png" alt="Mascote Aguardando E-mail" width="380" />
+</p>
 
 ---
 
@@ -99,8 +127,10 @@ extension/
 ├── dashboard.html             # Interface do Dashboard
 ├── vite.config.ts             # Script de build inteligente (Chrome/Firefox)
 └── src/
-    ├── App.tsx                # Componente principal do Side Panel
+    ├── App.tsx                # Componente principal do Side Panel com Progressive Disclosure
     ├── Auth.tsx               # Interface de autenticação Supabase
+    ├── components/
+    │   └── MascotHero.tsx     # Componente do Mascote Farejador e balão de fala dinâmico
     ├── lib/
     │   └── supabase.ts        # Cliente Supabase com storage adapter
     ├── background/

@@ -1,6 +1,6 @@
 # Extensão Web — Inimigos do Prompt
 
-Extensão para navegadores baseada em Manifest V3 desenvolvida com React 19, TypeScript, Vite e Tailwind CSS. Observa newsletters abertas no Gmail e Outlook Live, extrai o conteúdo textual e consulta a API FastAPI para destacar trechos sensacionalistas e exibir a análise no painel lateral.
+Extensão para navegadores baseada em Manifest V3 desenvolvida com React 19, TypeScript, Vite e Tailwind CSS. Observa newsletters abertas no Gmail e Outlook Live, extrai o conteúdo textual e consulta a API FastAPI para destacar trechos sensacionalistas e exibir diagnósticos através do **Mascote Farejador** no painel lateral.
 
 ---
 
@@ -29,6 +29,25 @@ sequenceDiagram
     SW-->>UI: Dispara evento com resultado
     UI->>User: Exibe métricas, risco e explicação
 ```
+
+---
+
+## Interface e Experiência do Usuário (Mascote Farejador)
+
+A interface adota o princípio de **Progressive Disclosure** (Divulgação Progressiva):
+- **Diagnóstico Humanizado:** O **Mascote Farejador** sintetiza o resultado da análise de Machine Learning com balões de fala conversacionais e reativos ao grau de sensacionalismo (`Sóbrio`, `Hype Moderado` ou `Hype Elevado`).
+- **Gatilhos em Destaque:** Pílulas com os termos de maior peso linguístico identificados pelo pipeline aparecem logo abaixo do mascote.
+- **Métricas Sob Demanda:** Em vez de poluir a leitura de newsletters com números frios, os gráficos (velocímetro, pesos das palavras, slider de calibração de confiança) ficam recolhidos em uma gaveta retrátil expansível com um clique.
+
+<p align="center">
+  <img src="../images/print_mascote_1_alerta_hype.png" alt="Visão Principal com Mascote Farejador" width="48%" />
+  <img src="../images/print_mascote_2_metricas_expandidas.png" alt="Métricas Expandidas sob Demanda" width="48%" />
+</p>
+
+<p align="center">
+  <img src="../images/print_mascote_3_sobrio.png" alt="Mascote Aprovando Texto Sóbrio" width="48%" />
+  <img src="../images/print_mascote_4_aguardando.png" alt="Mascote Aguardando E-mail no Webmail" width="48%" />
+</p>
 
 ---
 

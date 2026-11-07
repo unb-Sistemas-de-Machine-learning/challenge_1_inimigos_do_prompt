@@ -53,7 +53,7 @@ flowchart TB
 - **Extensão Multi-Navegador:** Injetada no Gmail e Outlook Live via Manifest V3 para Google Chrome e Mozilla Firefox. Extrai texto e renderiza grifos de termos enfáticos.
 - **Autenticação Segura:** Integrada com Supabase Auth via tokens JWT enviados no header `Authorization: Bearer`.
 - **API FastAPI com Strategy Pattern:** Suporta múltiplos backends de inferência (`gradio_space`, `bertimbau`, `sklearn` e `huggingface_api`). Retorna score de 1 a 5, termos destacados, claims de tom enfático e risco heurístico de desinformação.
-- **Painel Lateral & Dashboard:** Interface em React 19 com Tailwind CSS, monitoramento do estado da API, envio de feedback e exportação de relatórios.
+- **Painel Lateral & Mascote Farejador:** Interface moderna em React 19 com Tailwind CSS baseada no conceito de *Progressive Disclosure*. Apresenta o mascote farejador com diagnósticos intuitivos em linguagem natural, termos críticos destacados e métricas analíticas detalhadas sob demanda (gauge, pesos de features, risco de desinformação e slider de calibração).
 - **Pipeline de Dados & Treinamento:** Scripts para extração e processamento do *Fake.br-Corpus*, *FactChecks.br* e scrapers, além de notebooks para baseline TF-IDF e fine-tuning do BERTimbau ([gustant1/bertimbau-sensacionalismo](https://huggingface.co/gustant1/bertimbau-sensacionalismo)).
 
 ---
@@ -119,10 +119,19 @@ Consulte a documentação completa em [unb-Sistemas-de-Machine-learning.github.i
 
 ## Telas da Aplicação
 
+### Interface da Extensão (Mascote Farejador & Progressive Disclosure)
+
 <p align="center">
-  <img src="images/print_extensao_1.png" alt="Painel lateral de análise de hype" width="48%" />
-  <img src="images/print_extensao_2.png" alt="Painel lateral com claims e ações" width="48%" />
+  <img src="images/print_mascote_1_alerta_hype.png" alt="Visão Principal - Alerta de Hype com Mascote Farejador" width="48%" />
+  <img src="images/print_mascote_2_metricas_expandidas.png" alt="Métricas Expandidas sob Demanda" width="48%" />
 </p>
+
+<p align="center">
+  <img src="images/print_mascote_3_sobrio.png" alt="Mascote em Estado Sóbrio" width="48%" />
+  <img src="images/print_mascote_4_aguardando.png" alt="Mascote Aguardando E-mail no Webmail" width="48%" />
+</p>
+
+### Painel de Controle e Auditoria (Dashboard)
 
 <p align="center">
   <img src="images/print_dashboard_1.png" alt="Dashboard da PoC" width="100%" />

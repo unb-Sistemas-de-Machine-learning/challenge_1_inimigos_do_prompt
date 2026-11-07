@@ -27,5 +27,9 @@ feedback_log.jsonl
 .DS_Store
 *.DS_Store
 
+# Node & Frameworks
+node_modules/
+.astro/
+
 # Variáveis de Ambiente
 .env
